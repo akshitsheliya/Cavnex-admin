@@ -1,0 +1,906 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Card from "../../components/common/Card";
+import Button from "../../components/common/Button";
+import Loader from "../../components/common/Loader";
+import Modal from "../../components/common/Modal";
+import ClientProjects from "../../components/clients/ClientProjects";
+import clientService from "../../services/clientService";
+
+const ClientDetail = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [client, setClient] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [proposals, setProposals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    fetchClient();
+    fetchRelatedData();
+  }, [id]);
+
+  const fetchClient = async () => {
+    try {
+      setLoading(true);
+      const response = await clientService.getClient(id);
+      setClient(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch client");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRelatedData = async () => {
+    try {
+      const [projectsRes, invoicesRes, proposalsRes] = await Promise.allSettled(
+        [
+          clientService.getClientProjects(id),
+          clientService.getClientInvoices(id),
+          clientService.getClientProposals(id),
+        ]
+      );
+
+      if (projectsRes.status === "fulfilled") {
+        setProjects(projectsRes.value.data || []);
+      }
+      if (invoicesRes.status === "fulfilled") {
+        setInvoices(invoicesRes.value.data || []);
+      }
+      if (proposalsRes.status === "fulfilled") {
+        setProposals(proposalsRes.value.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching related data:", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setActionLoading(true);
+      await clientService.deleteClient(id);
+      navigate("/clients");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete client");
+    } finally {
+      setActionLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await clientService.updateClientStatus(id, newStatus);
+      setClient((prev) => ({ ...prev, status: newStatus }));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const getStatusConfig = (status) => {
+    const config = {
+      active: {
+        bg: "bg-neon-green/20",
+        text: "text-neon-green",
+        border: "border-neon-green/30",
+        label: "Active",
+      },
+      inactive: {
+        bg: "bg-gray-500/20",
+        text: "text-gray-400",
+        border: "border-gray-500/30",
+        label: "Inactive",
+      },
+      on_hold: {
+        bg: "bg-amber-500/20",
+        text: "text-amber-400",
+        border: "border-amber-500/30",
+        label: "On Hold",
+      },
+    };
+    return config[status] || config.active;
+  };
+
+  const getInvoiceStatusConfig = (status) => {
+    const config = {
+      draft: { bg: "bg-gray-500/20", text: "text-gray-400", label: "Draft" },
+      sent: { bg: "bg-neon-blue/20", text: "text-neon-blue", label: "Sent" },
+      paid: { bg: "bg-neon-green/20", text: "text-neon-green", label: "Paid" },
+      overdue: { bg: "bg-red-500/20", text: "text-red-400", label: "Overdue" },
+      cancelled: {
+        bg: "bg-gray-500/20",
+        text: "text-gray-400",
+        label: "Cancelled",
+      },
+    };
+    return config[status] || config.draft;
+  };
+
+  const getProposalStatusConfig = (status) => {
+    const config = {
+      draft: { bg: "bg-gray-500/20", text: "text-gray-400", label: "Draft" },
+      sent: { bg: "bg-neon-blue/20", text: "text-neon-blue", label: "Sent" },
+      accepted: {
+        bg: "bg-neon-green/20",
+        text: "text-neon-green",
+        label: "Accepted",
+      },
+      rejected: {
+        bg: "bg-red-500/20",
+        text: "text-red-400",
+        label: "Rejected",
+      },
+    };
+    return config[status] || config.draft;
+  };
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (error && !client) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400 mb-4">{error}</p>
+        <Button variant="outline" onClick={() => navigate("/clients")}>
+          Back to Clients
+        </Button>
+      </div>
+    );
+  }
+
+  if (!client) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-400 mb-4">Client not found</p>
+        <Button variant="outline" onClick={() => navigate("/clients")}>
+          Back to Clients
+        </Button>
+      </div>
+    );
+  }
+
+  const statusConfig = getStatusConfig(client.status);
+  const tabs = [
+    { id: "overview", label: "Overview" },
+    { id: "projects", label: "Projects", count: projects.length },
+    { id: "invoices", label: "Invoices", count: invoices.length },
+    { id: "proposals", label: "Proposals", count: proposals.length },
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={() => navigate("/clients")}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back to Clients
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+          <svg
+            className="w-5 h-5 text-red-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p className="text-red-400">{error}</p>
+        </div>
+      )}
+
+      <div className="glass-card p-6 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center shadow-lg">
+              <span className="text-3xl font-bold text-black">
+                {client.businessName?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                {client.businessName}
+              </h1>
+              <p className="text-gray-400">{client.clientName}</p>
+              <div className="flex items-center gap-3 mt-2">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                >
+                  {statusConfig.label}
+                </span>
+                {client.industry && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/5 text-gray-400 border border-white/10">
+                    {client.industry}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/clients/${id}/edit`)}
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Edit
+            </Button>
+            <Button
+              variant="neon"
+              onClick={() => navigate(`/projects/new?clientId=${id}`)}
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Project
+            </Button>
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/10">
+          <div className="text-center p-4 rounded-xl bg-white/[0.02]">
+            <p className="text-2xl font-bold text-white">{projects.length}</p>
+            <p className="text-sm text-gray-400">Projects</p>
+          </div>
+          <div className="text-center p-4 rounded-xl bg-white/[0.02]">
+            <p className="text-2xl font-bold text-neon-green">
+              {formatCurrency(client.totalRevenue || 0)}
+            </p>
+            <p className="text-sm text-gray-400">Total Revenue</p>
+          </div>
+          <div className="text-center p-4 rounded-xl bg-white/[0.02]">
+            <p className="text-2xl font-bold text-white">{invoices.length}</p>
+            <p className="text-sm text-gray-400">Invoices</p>
+          </div>
+          <div className="text-center p-4 rounded-xl bg-white/[0.02]">
+            <p className="text-2xl font-bold text-white">{proposals.length}</p>
+            <p className="text-sm text-gray-400">Proposals</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              activeTab === tab.id
+                ? "bg-neon-green/10 text-neon-green border border-neon-green/30"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            {tab.label}
+            {tab.count !== undefined && (
+              <span
+                className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                  activeTab === tab.id ? "bg-neon-green/20" : "bg-white/10"
+                }`}
+              >
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card title="Contact Information">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    Email
+                  </p>
+                  <a
+                    href={`mailto:${client.email}`}
+                    className="text-white hover:text-neon-green transition-colors"
+                  >
+                    {client.email}
+                  </a>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    Phone
+                  </p>
+                  <a
+                    href={`tel:${client.phone}`}
+                    className="text-white hover:text-neon-green transition-colors"
+                  >
+                    {client.phone}
+                  </a>
+                </div>
+                {client.alternatePhone && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                      Alternate Phone
+                    </p>
+                    <p className="text-white">{client.alternatePhone}</p>
+                  </div>
+                )}
+                {client.website && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                      Website
+                    </p>
+                    <a
+                      href={
+                        client.website.startsWith("http")
+                          ? client.website
+                          : `https://${client.website}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neon-blue hover:text-neon-green transition-colors"
+                    >
+                      {client.website}
+                    </a>
+                  </div>
+                )}
+                {client.gstNumber && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                      GST Number
+                    </p>
+                    <p className="text-white">{client.gstNumber}</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {(client.address?.street || client.address?.city) && (
+              <Card title="Address">
+                <div className="text-gray-300">
+                  {client.address.street && <p>{client.address.street}</p>}
+                  <p>
+                    {[
+                      client.address.city,
+                      client.address.state,
+                      client.address.pincode,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
+                  {client.address.country && <p>{client.address.country}</p>}
+                </div>
+              </Card>
+            )}
+
+            {client.contactPerson?.name && (
+              <Card title="Additional Contact Person">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                      Name
+                    </p>
+                    <p className="text-white">{client.contactPerson.name}</p>
+                  </div>
+                  {client.contactPerson.designation && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                        Designation
+                      </p>
+                      <p className="text-white">
+                        {client.contactPerson.designation}
+                      </p>
+                    </div>
+                  )}
+                  {client.contactPerson.email && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                        Email
+                      </p>
+                      <a
+                        href={`mailto:${client.contactPerson.email}`}
+                        className="text-white hover:text-neon-green transition-colors"
+                      >
+                        {client.contactPerson.email}
+                      </a>
+                    </div>
+                  )}
+                  {client.contactPerson.phone && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                        Phone
+                      </p>
+                      <p className="text-white">{client.contactPerson.phone}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {client.notes && (
+              <Card title="Notes">
+                <p className="text-gray-300 whitespace-pre-wrap">
+                  {client.notes}
+                </p>
+              </Card>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <Card title="Update Status">
+              <div className="space-y-2">
+                {["active", "inactive", "on_hold"].map((status) => {
+                  const config = getStatusConfig(status);
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status)}
+                      className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
+                        client.status === status
+                          ? `${config.bg} border ${config.border} ${config.text}`
+                          : "bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{config.label}</span>
+                        {client.status === status && (
+                          <svg
+                            className="w-5 h-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+
+            <Card title="Quick Actions">
+              <div className="space-y-3">
+                <a
+                  href={`mailto:${client.email}`}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Send Email
+                </a>
+                <a
+                  href={`tel:${client.phone}`}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                  Call Now
+                </a>
+                <a
+                  href={`https://wa.me/91${client.phone}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  WhatsApp
+                </a>
+                <button
+                  onClick={() => navigate(`/invoices/new?clientId=${id}`)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+                    />
+                  </svg>
+                  Create Invoice
+                </button>
+                <button
+                  onClick={() => navigate(`/proposals/new?clientId=${id}`)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Create Proposal
+                </button>
+              </div>
+            </Card>
+
+            <Card title="Client Info">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    Source
+                  </p>
+                  <p className="text-white capitalize">
+                    {client.source?.replace("_", " ")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    Client Since
+                  </p>
+                  <p className="text-white">{formatDate(client.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    Last Updated
+                  </p>
+                  <p className="text-white">{formatDate(client.updatedAt)}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "projects" && (
+        <Card
+          title="Projects"
+          actions={
+            <Button
+              variant="neon"
+              size="sm"
+              onClick={() => navigate(`/projects/new?clientId=${id}`)}
+            >
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Project
+            </Button>
+          }
+        >
+          <ClientProjects projects={projects} clientId={id} />
+        </Card>
+      )}
+
+      {activeTab === "invoices" && (
+        <Card
+          title="Invoices"
+          actions={
+            <Button
+              variant="neon"
+              size="sm"
+              onClick={() => navigate(`/invoices/new?clientId=${id}`)}
+            >
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Invoice
+            </Button>
+          }
+        >
+          {invoices.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/5 flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-400 mb-4">No invoices yet</p>
+              <button
+                onClick={() => navigate(`/invoices/new?clientId=${id}`)}
+                className="px-4 py-2 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-colors"
+              >
+                Create First Invoice
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {invoices.map((invoice) => {
+                const statusConfig = getInvoiceStatusConfig(invoice.status);
+                return (
+                  <div
+                    key={invoice._id}
+                    onClick={() => navigate(`/invoices/${invoice._id}`)}
+                    className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-white group-hover:text-neon-green transition-colors">
+                          {invoice.invoiceNumber ||
+                            `INV-${invoice._id.slice(-6).toUpperCase()}`}
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(invoice.createdAt)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-neon-green">
+                          {formatCurrency(invoice.amount || invoice.total || 0)}
+                        </p>
+                        <span
+                          className={`px-2 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}
+                        >
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === "proposals" && (
+        <Card
+          title="Proposals"
+          actions={
+            <Button
+              variant="neon"
+              size="sm"
+              onClick={() => navigate(`/proposals/new?clientId=${id}`)}
+            >
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Proposal
+            </Button>
+          }
+        >
+          {proposals.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/5 flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-400 mb-4">No proposals yet</p>
+              <button
+                onClick={() => navigate(`/proposals/new?clientId=${id}`)}
+                className="px-4 py-2 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-colors"
+              >
+                Create First Proposal
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {proposals.map((proposal) => {
+                const statusConfig = getProposalStatusConfig(proposal.status);
+                return (
+                  <div
+                    key={proposal._id}
+                    onClick={() => navigate(`/proposals/${proposal._id}`)}
+                    className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-white group-hover:text-neon-green transition-colors">
+                          {proposal.title || "Untitled Proposal"}
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(proposal.createdAt)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-neon-green">
+                          {formatCurrency(
+                            proposal.amount || proposal.total || 0
+                          )}
+                        </p>
+                        <span
+                          className={`px-2 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}
+                        >
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Client"
+      >
+        <p className="text-gray-300 mb-4">
+          Are you sure you want to delete{" "}
+          <span className="text-white font-medium">{client.businessName}</span>?
+        </p>
+        <p className="text-gray-400 text-sm mb-6">
+          This will also affect all associated projects, invoices, and
+          proposals. This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDelete}
+            loading={actionLoading}
+          >
+            Delete Client
+          </Button>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+export default ClientDetail;

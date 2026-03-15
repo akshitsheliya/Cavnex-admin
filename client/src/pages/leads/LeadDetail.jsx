@@ -1,0 +1,520 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Card from "../../components/common/Card";
+import Button from "../../components/common/Button";
+import Loader from "../../components/common/Loader";
+import Modal from "../../components/common/Modal";
+import LeadStatusBadge from "../../components/leads/LeadStatusBadge";
+import leadService from "../../services/leadService";
+
+const LeadDetail = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [lead, setLead] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    fetchLead();
+  }, [id]);
+
+  const fetchLead = async () => {
+    try {
+      setLoading(true);
+      const response = await leadService.getLead(id);
+      setLead(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch lead");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setActionLoading(true);
+      await leadService.deleteLead(id);
+      navigate("/leads");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete lead");
+    } finally {
+      setActionLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const handleConvert = async () => {
+    try {
+      setActionLoading(true);
+      await leadService.convertToClient(id);
+      navigate("/clients");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to convert lead");
+    } finally {
+      setActionLoading(false);
+      setShowConvertModal(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await leadService.updateLeadStatus(id, newStatus);
+      setLead((prev) => ({ ...prev, status: newStatus }));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (error && !lead) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400 mb-4">{error}</p>
+        <Button variant="outline" onClick={() => navigate("/leads")}>
+          Back to Leads
+        </Button>
+      </div>
+    );
+  }
+
+  if (!lead) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-400 mb-4">Lead not found</p>
+        <Button variant="outline" onClick={() => navigate("/leads")}>
+          Back to Leads
+        </Button>
+      </div>
+    );
+  }
+
+  const statusOptions = [
+    { value: "new", label: "New" },
+    { value: "contacted", label: "Contacted" },
+    { value: "meeting", label: "Meeting" },
+    { value: "proposal_sent", label: "Proposal Sent" },
+    { value: "negotiation", label: "Negotiation" },
+    { value: "closed_won", label: "Won" },
+    { value: "closed_lost", label: "Lost" },
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={() => navigate("/leads")}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back to Leads
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+          <svg
+            className="w-5 h-5 text-red-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p className="text-red-400">{error}</p>
+        </div>
+      )}
+
+      <div className="glass-card p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl font-bold text-white">
+                {lead.leadName?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">{lead.leadName}</h1>
+              <p className="text-gray-400">
+                {lead.businessName || "No business name"}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <LeadStatusBadge status={lead.status} size="lg" />
+                {lead.convertedToClient && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-neon-blue/20 text-neon-blue border border-neon-blue/30">
+                    Converted
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/leads/${id}/edit`)}
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Edit
+            </Button>
+            {!lead.convertedToClient && lead.status !== "closed_won" && (
+              <Button variant="neon" onClick={() => setShowConvertModal(true)}>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                  />
+                </svg>
+                Convert to Client
+              </Button>
+            )}
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              Delete
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Card title="Contact Information">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Email
+                </p>
+                <a
+                  href={`mailto:${lead.email}`}
+                  className="text-white hover:text-neon-green transition-colors"
+                >
+                  {lead.email}
+                </a>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Phone
+                </p>
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="text-white hover:text-neon-green transition-colors"
+                >
+                  {lead.phone}
+                </a>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  City
+                </p>
+                <p className="text-white">{lead.city || "Not specified"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Business Type
+                </p>
+                <p className="text-white">
+                  {lead.businessType || "Not specified"}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Lead Details">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Source
+                </p>
+                <p className="text-white capitalize">
+                  {lead.source?.replace("_", " ")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Estimated Value
+                </p>
+                <p className="text-neon-green font-semibold">
+                  {lead.estimatedValue > 0
+                    ? formatCurrency(lead.estimatedValue)
+                    : "Not specified"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Created
+                </p>
+                <p className="text-white">{formatDate(lead.createdAt)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Follow-up Date
+                </p>
+                <p className="text-white">
+                  {lead.followUpDate
+                    ? formatDate(lead.followUpDate)
+                    : "Not set"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Last Updated
+                </p>
+                <p className="text-white">{formatDate(lead.updatedAt)}</p>
+              </div>
+            </div>
+
+            {lead.notes && (
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                  Notes
+                </p>
+                <p className="text-gray-300 whitespace-pre-wrap">
+                  {lead.notes}
+                </p>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card title="Update Status">
+            <div className="space-y-2">
+              {statusOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleStatusChange(option.value)}
+                  disabled={lead.convertedToClient}
+                  className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
+                    lead.status === option.value
+                      ? "bg-neon-green/10 border border-neon-green/30 text-neon-green"
+                      : "bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white"
+                  } ${lead.convertedToClient ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>{option.label}</span>
+                    {lead.status === option.value && (
+                      <svg
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Quick Actions">
+            <div className="space-y-3">
+              <a
+                href={`mailto:${lead.email}`}
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                Send Email
+              </a>
+              <a
+                href={`tel:${lead.phone}`}
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  />
+                </svg>
+                Call Now
+              </a>
+              <a
+                href={`https://wa.me/91${lead.phone}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                WhatsApp
+              </a>
+              <button
+                onClick={() =>
+                  navigate("/proposals/new", {
+                    state: { leadId: lead._id, leadName: lead.leadName },
+                  })
+                }
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                Create Proposal
+              </button>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Lead"
+      >
+        <p className="text-gray-300 mb-6">
+          Are you sure you want to delete{" "}
+          <span className="text-white font-medium">{lead.leadName}</span>? This
+          action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDelete}
+            loading={actionLoading}
+          >
+            Delete Lead
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showConvertModal}
+        onClose={() => setShowConvertModal(false)}
+        title="Convert to Client"
+      >
+        <p className="text-gray-300 mb-4">
+          Are you sure you want to convert{" "}
+          <span className="text-white font-medium">{lead.leadName}</span> to a
+          client?
+        </p>
+        <p className="text-gray-400 text-sm mb-6">
+          This will create a new client record with the lead's information and
+          mark this lead as "Won".
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={() => setShowConvertModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="neon"
+            onClick={handleConvert}
+            loading={actionLoading}
+          >
+            Convert to Client
+          </Button>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+export default LeadDetail;
