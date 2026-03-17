@@ -1,10 +1,16 @@
+// src/pages/projects/ProjectList.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import Loader from "../../components/common/Loader";
+import FilterBar from "../../components/common/FilterBar";
 import Pagination from "../../components/common/Pagination";
+import StatCards from "../../components/common/StatCards";
+import EmptyState from "../../components/common/EmptyState";
+import ErrorAlert from "../../components/common/ErrorAlert";
 import ProjectCard from "../../components/projects/ProjectCard";
-import ProjectFilters from "../../components/projects/ProjectFilters";
+import { projectFilterConfig } from "../../config/filterConfigs";
+import { formatCurrency } from "../../utils/formatters";
 import projectService from "../../services/projectService";
 
 const ProjectList = () => {
@@ -32,14 +38,12 @@ const ProjectList = () => {
     try {
       setLoading(true);
       setError("");
-
       const params = {
         page: pagination.current,
         limit: pagination.limit,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       };
-
       if (filters.search) params.search = filters.search;
       if (filters.status) params.status = filters.status;
       if (filters.projectType) params.projectType = filters.projectType;
@@ -100,7 +104,6 @@ const ProjectList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this project?"))
       return;
-
     try {
       await projectService.deleteProject(id);
       fetchProjects();
@@ -110,97 +113,89 @@ const ProjectList = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const statCards = stats
+    ? [
+        {
+          label: "Total Projects",
+          value: stats.totalProjects || 0,
+          color: "from-purple-500 to-pink-500",
+          icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z",
+        },
+        {
+          label: "Active",
+          value: stats.activeProjects || 0,
+          color: "from-neon-blue to-cyan-400",
+          icon: "M13 10V3L4 14h7v7l9-11h-7z",
+        },
+        {
+          label: "Overdue",
+          value: stats.overdueProjects || 0,
+          color: "from-red-500 to-rose-500",
+          icon: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+        {
+          label: "Total Revenue",
+          value: formatCurrency(stats.totalPaid || 0),
+          color: "from-green-400 to-emerald-500",
+          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+      ]
+    : [];
+
+  const hasFilters =
+    filters.search || filters.status || filters.projectType || filters.priority;
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Projects</h1>
-          <p className="text-gray-400 mt-1">Manage your client projects</p>
+          <p className="text-gray-500 mt-1">Manage your client projects</p>
         </div>
         <Button variant="neon" onClick={() => navigate("/projects/new")}>
-          + New Project
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          New Project
         </Button>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="glass-card p-4">
-            <p className="text-sm text-gray-400">Total Projects</p>
-            <p className="text-2xl font-bold text-white">
-              {stats.totalProjects || 0}
-            </p>
-          </div>
-          <div className="glass-card p-4">
-            <p className="text-sm text-gray-400">Active</p>
-            <p className="text-2xl font-bold text-neon-blue">
-              {stats.activeProjects || 0}
-            </p>
-          </div>
-          <div className="glass-card p-4">
-            <p className="text-sm text-gray-400">Overdue</p>
-            <p className="text-2xl font-bold text-red-400">
-              {stats.overdueProjects || 0}
-            </p>
-          </div>
-          <div className="glass-card p-4">
-            <p className="text-sm text-gray-400">Total Revenue</p>
-            <p className="text-2xl font-bold text-neon-green">
-              {formatCurrency(stats.totalPaid || 0)}
-            </p>
-          </div>
-        </div>
-      )}
+      <ErrorAlert message={error} onClose={() => setError("")} />
 
-      {/* Filters */}
-      <ProjectFilters
+      <StatCards stats={statCards} />
+
+      <FilterBar
+        searchPlaceholder="Search projects..."
         filters={filters}
         onFilterChange={handleFilterChange}
         onReset={handleResetFilters}
+        filterConfig={projectFilterConfig}
       />
 
-      {/* Error */}
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
-          <p className="text-red-400">{error}</p>
-        </div>
-      )}
-
-      {/* Content */}
       {loading ? (
         <Loader />
       ) : projects.length === 0 ? (
-        <div className="glass-card p-12 text-center">
-          <div className="text-6xl mb-4">📁</div>
-          <h3 className="text-xl font-semibold text-white mb-2">
-            No projects found
-          </h3>
-          <p className="text-gray-400 mb-6">
-            {filters.search ||
-            filters.status ||
-            filters.projectType ||
-            filters.priority
+        <EmptyState
+          icon="📁"
+          title="No projects found"
+          description={
+            hasFilters
               ? "Try adjusting your filters"
-              : "Create your first project to get started"}
-          </p>
-          {!filters.search &&
-            !filters.status &&
-            !filters.projectType &&
-            !filters.priority && (
-              <Button variant="neon" onClick={() => navigate("/projects/new")}>
-                Create Project
-              </Button>
-            )}
-        </div>
+              : "Create your first project to get started"
+          }
+          actionLabel={hasFilters ? undefined : "Create Project"}
+          onAction={hasFilters ? undefined : () => navigate("/projects/new")}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -212,17 +207,11 @@ const ProjectList = () => {
               />
             ))}
           </div>
-
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <div className="mt-8">
-              <Pagination
-                currentPage={pagination.current}
-                totalPages={pagination.pages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.current}
+            totalPages={pagination.pages}
+            onPageChange={handlePageChange}
+          />
         </>
       )}
     </div>

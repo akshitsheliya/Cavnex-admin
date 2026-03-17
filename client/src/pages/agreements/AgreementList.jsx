@@ -1,11 +1,203 @@
+// src/pages/agreements/AgreementList.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import Loader from "../../components/common/Loader";
 import Modal from "../../components/common/Modal";
+import FilterBar from "../../components/common/FilterBar";
+import StatCards from "../../components/common/StatCards";
+import EmptyState from "../../components/common/EmptyState";
+import ErrorAlert from "../../components/common/ErrorAlert";
+import { agreementFilterConfig } from "../../config/filterConfigs";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import agreementService from "../../services/agreementService";
+
+const getStatusConfig = (status) => {
+  const config = {
+    draft: {
+      bg: "bg-gray-500/20",
+      text: "text-gray-400",
+      border: "border-gray-500/30",
+      label: "Draft",
+    },
+    sent: {
+      bg: "bg-neon-blue/20",
+      text: "text-neon-blue",
+      border: "border-neon-blue/30",
+      label: "Sent",
+    },
+    viewed: {
+      bg: "bg-purple-500/20",
+      text: "text-purple-400",
+      border: "border-purple-500/30",
+      label: "Viewed",
+    },
+    signed: {
+      bg: "bg-neon-green/20",
+      text: "text-neon-green",
+      border: "border-neon-green/30",
+      label: "Signed",
+    },
+    active: {
+      bg: "bg-emerald-500/20",
+      text: "text-emerald-400",
+      border: "border-emerald-500/30",
+      label: "Active",
+    },
+    completed: {
+      bg: "bg-cyan-500/20",
+      text: "text-cyan-400",
+      border: "border-cyan-500/30",
+      label: "Completed",
+    },
+    terminated: {
+      bg: "bg-red-500/20",
+      text: "text-red-400",
+      border: "border-red-500/30",
+      label: "Terminated",
+    },
+    expired: {
+      bg: "bg-amber-500/20",
+      text: "text-amber-400",
+      border: "border-amber-500/30",
+      label: "Expired",
+    },
+  };
+  return config[status] || config.draft;
+};
+
+const getTypeIcon = (type) => {
+  const icons = {
+    software_development: "💻",
+    maintenance: "🔧",
+    consulting: "💼",
+    nda: "🔒",
+    custom: "📝",
+  };
+  return icons[type] || "📄";
+};
+
+const AgreementCard = ({ agreement, onEdit, onDuplicate, onDelete }) => {
+  const statusConfig = getStatusConfig(agreement.status);
+
+  return (
+    <div
+      className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 hover:border-neon-green/30 transition-all duration-500 cursor-pointer overflow-hidden"
+      onClick={() => onEdit(agreement._id, false)}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-neon-green/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+      <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+            {getTypeIcon(agreement.type)}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+              <h3 className="text-base font-semibold text-white truncate">
+                {agreement.title}
+              </h3>
+              <span
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+              >
+                {statusConfig.label}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+              <span className="font-mono text-xs">
+                {agreement.agreementNumber}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-gray-700" />
+              <span>
+                {agreement.dynamicFields?.clientName ||
+                  agreement.client?.clientName ||
+                  "No Client"}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-gray-700" />
+              <span>
+                {agreement.dynamicFields?.projectName || "No Project"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-5">
+          <div className="text-right">
+            <p className="text-lg font-bold bg-gradient-to-r from-neon-green to-emerald-400 bg-clip-text text-transparent">
+              {formatCurrency(agreement.dynamicFields?.price)}
+            </p>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Created {formatDate(agreement.createdAt)}
+            </p>
+          </div>
+
+          <div
+            className="flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => onEdit(agreement._id, true)}
+              className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+              title="Edit"
+            >
+              <svg
+                className="w-4.5 h-4.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => onDuplicate(agreement._id)}
+              className="p-2 rounded-lg text-gray-500 hover:text-neon-blue hover:bg-neon-blue/10 transition-all duration-200"
+              title="Duplicate"
+            >
+              <svg
+                className="w-4.5 h-4.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => onDelete(agreement)}
+              className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+              title="Delete"
+            >
+              <svg
+                className="w-4.5 h-4.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AgreementList = () => {
   const navigate = useNavigate();
@@ -31,12 +223,10 @@ const AgreementList = () => {
     try {
       setLoading(true);
       setError("");
-
       const params = {
         page: pagination.current,
         limit: pagination.limit,
       };
-
       if (filters.search) params.search = filters.search;
       if (filters.status) params.status = filters.status;
       if (filters.type) params.type = filters.type;
@@ -72,9 +262,18 @@ const AgreementList = () => {
     fetchStats();
   }, []);
 
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({ search: "", status: "", type: "" });
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
   const handleDelete = async () => {
     if (!selectedAgreement) return;
-
     try {
       await agreementService.deleteAgreement(selectedAgreement._id);
       setShowDeleteModal(false);
@@ -95,364 +294,121 @@ const AgreementList = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
+  const handleEdit = (id, isEdit) => {
+    if (isEdit) {
+      navigate(`/agreements/${id}/edit`);
+    } else {
+      navigate(`/agreements/${id}`);
+    }
   };
 
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+  const handleDeleteClick = (agreement) => {
+    setSelectedAgreement(agreement);
+    setShowDeleteModal(true);
   };
 
-  const getStatusConfig = (status) => {
-    const config = {
-      draft: {
-        bg: "bg-gray-500/20",
-        text: "text-gray-400",
-        border: "border-gray-500/30",
-        label: "Draft",
-      },
-      sent: {
-        bg: "bg-neon-blue/20",
-        text: "text-neon-blue",
-        border: "border-neon-blue/30",
-        label: "Sent",
-      },
-      viewed: {
-        bg: "bg-purple-500/20",
-        text: "text-purple-400",
-        border: "border-purple-500/30",
-        label: "Viewed",
-      },
-      signed: {
-        bg: "bg-neon-green/20",
-        text: "text-neon-green",
-        border: "border-neon-green/30",
-        label: "Signed",
-      },
-      active: {
-        bg: "bg-emerald-500/20",
-        text: "text-emerald-400",
-        border: "border-emerald-500/30",
-        label: "Active",
-      },
-      completed: {
-        bg: "bg-cyan-500/20",
-        text: "text-cyan-400",
-        border: "border-cyan-500/30",
-        label: "Completed",
-      },
-      terminated: {
-        bg: "bg-red-500/20",
-        text: "text-red-400",
-        border: "border-red-500/30",
-        label: "Terminated",
-      },
-      expired: {
-        bg: "bg-amber-500/20",
-        text: "text-amber-400",
-        border: "border-amber-500/30",
-        label: "Expired",
-      },
-    };
-    return config[status] || config.draft;
-  };
+  const statCards = stats
+    ? [
+        {
+          label: "Total",
+          value: stats.totalAgreements || 0,
+          color: "from-purple-500 to-pink-500",
+          icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+        },
+        {
+          label: "Drafts",
+          value: stats.statusCounts?.draft || 0,
+          color: "from-gray-400 to-gray-500",
+          icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
+        },
+        {
+          label: "Sent",
+          value: stats.statusCounts?.sent || 0,
+          color: "from-neon-blue to-cyan-400",
+          icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
+        },
+        {
+          label: "Signed",
+          value: stats.statusCounts?.signed || 0,
+          color: "from-neon-green to-emerald-500",
+          icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+        },
+        {
+          label: "Total Value",
+          value: formatCurrency(stats.totalContractValue),
+          color: "from-amber-500 to-orange-500",
+          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+      ]
+    : [];
 
-  const getTypeIcon = (type) => {
-    const icons = {
-      software_development: "💻",
-      maintenance: "🔧",
-      consulting: "💼",
-      nda: "🔒",
-      custom: "📝",
-    };
-    return icons[type] || "📄";
-  };
-
-  const statuses = [
-    { value: "", label: "All Status" },
-    { value: "draft", label: "Draft" },
-    { value: "sent", label: "Sent" },
-    { value: "signed", label: "Signed" },
-    { value: "active", label: "Active" },
-    { value: "completed", label: "Completed" },
-    { value: "terminated", label: "Terminated" },
-  ];
-
-  const types = [
-    { value: "", label: "All Types" },
-    { value: "software_development", label: "Software Development" },
-    { value: "maintenance", label: "Maintenance" },
-    { value: "consulting", label: "Consulting" },
-    { value: "nda", label: "NDA" },
-    { value: "custom", label: "Custom" },
-  ];
+  const hasFilters = filters.search || filters.status || filters.type;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Agreements</h1>
-          <p className="text-gray-400 mt-1">Manage your client agreements</p>
+          <p className="text-gray-500 mt-1">Manage your client agreements</p>
         </div>
         <Button variant="neon" onClick={() => navigate("/agreements/new")}>
-          + Create Agreement
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Create Agreement
         </Button>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-white">
-              {stats.totalAgreements || 0}
-            </p>
-            <p className="text-sm text-gray-400">Total</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-400">
-              {stats.statusCounts?.draft || 0}
-            </p>
-            <p className="text-sm text-gray-400">Drafts</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-neon-blue">
-              {stats.statusCounts?.sent || 0}
-            </p>
-            <p className="text-sm text-gray-400">Sent</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-neon-green">
-              {stats.statusCounts?.signed || 0}
-            </p>
-            <p className="text-sm text-gray-400">Signed</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-neon-green">
-              {formatCurrency(stats.totalContractValue)}
-            </p>
-            <p className="text-sm text-gray-400">Total Value</p>
-          </Card>
-        </div>
-      )}
+      <ErrorAlert message={error} onClose={() => setError("")} />
 
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search agreements..."
-              value={filters.search}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, search: e.target.value }))
-              }
-              icon={
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              }
-            />
-          </div>
-          <select
-            value={filters.status}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, status: e.target.value }))
-            }
-            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-          >
-            {statuses.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.type}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, type: e.target.value }))
-            }
-            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-          >
-            {types.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </Card>
+      <StatCards stats={statCards} />
 
-      {/* Error */}
-      {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30">
-          <p className="text-red-400">{error}</p>
-        </div>
-      )}
+      <FilterBar
+        searchPlaceholder="Search agreements..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onReset={handleResetFilters}
+        filterConfig={agreementFilterConfig}
+      />
 
-      {/* Content */}
       {loading ? (
         <Loader />
       ) : agreements.length === 0 ? (
-        <Card className="p-12 text-center">
-          <div className="text-6xl mb-4">📜</div>
-          <h3 className="text-xl font-semibold text-white mb-2">
-            No agreements found
-          </h3>
-          <p className="text-gray-400 mb-6">
-            Create your first agreement to get started
-          </p>
-          <Button variant="neon" onClick={() => navigate("/agreements/new")}>
-            Create Agreement
-          </Button>
-        </Card>
+        <EmptyState
+          icon="📜"
+          title="No agreements found"
+          description={
+            hasFilters
+              ? "Try adjusting your filters"
+              : "Create your first agreement to get started"
+          }
+          actionLabel={hasFilters ? undefined : "Create Agreement"}
+          onAction={hasFilters ? undefined : () => navigate("/agreements/new")}
+        />
       ) : (
         <div className="space-y-4">
-          {agreements.map((agreement) => {
-            const statusConfig = getStatusConfig(agreement.status);
-
-            return (
-              <Card
-                key={agreement._id}
-                className="p-6 hover:border-neon-green/30 transition-all cursor-pointer"
-                onClick={() => navigate(`/agreements/${agreement._id}`)}
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="text-3xl">
-                      {getTypeIcon(agreement.type)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-lg font-semibold text-white">
-                          {agreement.title}
-                        </h3>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
-                        >
-                          {statusConfig.label}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                        <span>{agreement.agreementNumber}</span>
-                        <span>•</span>
-                        <span>
-                          {agreement.dynamicFields?.clientName ||
-                            agreement.client?.clientName ||
-                            "No Client"}
-                        </span>
-                        <span>•</span>
-                        <span>
-                          {agreement.dynamicFields?.projectName || "No Project"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-neon-green">
-                        {formatCurrency(agreement.dynamicFields?.price)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Created {formatDate(agreement.createdAt)}
-                      </p>
-                    </div>
-
-                    <div
-                      className="flex items-center gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() =>
-                          navigate(`/agreements/${agreement._id}/edit`)
-                        }
-                        className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDuplicate(agreement._id)}
-                        className="p-2 text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-colors"
-                        title="Duplicate"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedAgreement(agreement);
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {agreements.map((agreement) => (
+            <AgreementCard
+              key={agreement._id}
+              agreement={agreement}
+              onEdit={handleEdit}
+              onDuplicate={handleDuplicate}
+              onDelete={handleDeleteClick}
+            />
+          ))}
         </div>
       )}
 
-      {/* Delete Modal */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => {
@@ -477,11 +433,7 @@ const AgreementList = () => {
             >
               Cancel
             </Button>
-            <Button
-              variant="neon"
-              className="flex-1 !bg-red-500 !shadow-red-500/25"
-              onClick={handleDelete}
-            >
+            <Button variant="danger" className="flex-1" onClick={handleDelete}>
               Delete
             </Button>
           </div>

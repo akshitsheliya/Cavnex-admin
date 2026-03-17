@@ -1,12 +1,17 @@
+// src/pages/invoices/InvoiceList.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Loader from "../../components/common/Loader";
 import Modal from "../../components/common/Modal";
 import Input from "../../components/common/Input";
+import FilterBar from "../../components/common/FilterBar";
+import StatCards from "../../components/common/StatCards";
+import EmptyState from "../../components/common/EmptyState";
+import ErrorAlert from "../../components/common/ErrorAlert";
 import InvoiceCard from "../../components/invoices/InvoiceCard";
-import InvoiceFilters from "../../components/invoices/InvoiceFilters";
+import { invoiceFilterConfig } from "../../config/filterConfigs";
+import { formatCurrency } from "../../utils/formatters";
 import invoiceService from "../../services/invoiceService";
 
 const InvoiceList = () => {
@@ -40,12 +45,10 @@ const InvoiceList = () => {
     try {
       setLoading(true);
       setError("");
-
       const params = {
         page: pagination.current,
         limit: pagination.limit,
       };
-
       if (filters.search) params.search = filters.search;
       if (filters.status) params.status = filters.status;
       if (filters.startDate) params.startDate = filters.startDate;
@@ -88,18 +91,12 @@ const InvoiceList = () => {
   };
 
   const handleResetFilters = () => {
-    setFilters({
-      search: "",
-      status: "",
-      startDate: "",
-      endDate: "",
-    });
+    setFilters({ search: "", status: "", startDate: "", endDate: "" });
     setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleDelete = async () => {
     if (!selectedInvoice) return;
-
     try {
       await invoiceService.deleteInvoice(selectedInvoice._id);
       setShowDeleteModal(false);
@@ -122,7 +119,6 @@ const InvoiceList = () => {
 
   const handleRecordPayment = async () => {
     if (!selectedInvoice || !paymentData.amount) return;
-
     try {
       await invoiceService.recordPayment(selectedInvoice._id, {
         amount: Number(paymentData.amount),
@@ -152,104 +148,99 @@ const InvoiceList = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
   const paymentMethods = [
-    { id: "bank_transfer", label: "Bank Transfer" },
-    { id: "upi", label: "UPI" },
-    { id: "cheque", label: "Cheque" },
-    { id: "cash", label: "Cash" },
-    { id: "card", label: "Card" },
-    { id: "other", label: "Other" },
+    { value: "bank_transfer", label: "Bank Transfer" },
+    { value: "upi", label: "UPI" },
+    { value: "cheque", label: "Cheque" },
+    { value: "cash", label: "Cash" },
+    { value: "card", label: "Card" },
+    { value: "other", label: "Other" },
   ];
+
+  const statCards = stats
+    ? [
+        {
+          label: "Total Invoices",
+          value: stats.totalInvoices || 0,
+          color: "from-purple-500 to-pink-500",
+          icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+        },
+        {
+          label: "Total Amount",
+          value: formatCurrency(stats.totalAmount),
+          color: "from-neon-green to-emerald-500",
+          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+        {
+          label: "Received",
+          value: formatCurrency(stats.totalPaid),
+          color: "from-neon-blue to-cyan-400",
+          icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+        {
+          label: "Pending",
+          value: formatCurrency(stats.totalPending),
+          color: "from-amber-500 to-orange-500",
+          icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+        {
+          label: "Overdue",
+          value: stats.statusCounts?.overdue || 0,
+          color: "from-red-500 to-rose-500",
+          icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
+        },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Invoices</h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-gray-500 mt-1">
             Manage your invoices and payments
           </p>
         </div>
         <Button variant="neon" onClick={() => navigate("/invoices/new")}>
-          + Create Invoice
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Create Invoice
         </Button>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-white">
-              {stats.totalInvoices || 0}
-            </p>
-            <p className="text-sm text-gray-400">Total Invoices</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-neon-green">
-              {formatCurrency(stats.totalAmount)}
-            </p>
-            <p className="text-sm text-gray-400">Total Amount</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-neon-blue">
-              {formatCurrency(stats.totalPaid)}
-            </p>
-            <p className="text-sm text-gray-400">Received</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-amber-400">
-              {formatCurrency(stats.totalPending)}
-            </p>
-            <p className="text-sm text-gray-400">Pending</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-red-400">
-              {stats.statusCounts?.overdue || 0}
-            </p>
-            <p className="text-sm text-gray-400">Overdue</p>
-          </Card>
-        </div>
-      )}
+      <ErrorAlert message={error} onClose={() => setError("")} />
 
-      {/* Filters */}
-      <InvoiceFilters
+      <StatCards stats={statCards} />
+
+      <FilterBar
+        searchPlaceholder="Search invoices..."
         filters={filters}
         onFilterChange={handleFilterChange}
         onReset={handleResetFilters}
+        filterConfig={invoiceFilterConfig}
       />
 
-      {/* Error */}
-      {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30">
-          <p className="text-red-400">{error}</p>
-        </div>
-      )}
-
-      {/* Content */}
       {loading ? (
         <Loader />
       ) : invoices.length === 0 ? (
-        <Card className="p-12 text-center">
-          <div className="text-6xl mb-4">📄</div>
-          <h3 className="text-xl font-semibold text-white mb-2">
-            No invoices found
-          </h3>
-          <p className="text-gray-400 mb-6">
-            Create your first invoice to get started
-          </p>
-          <Button variant="neon" onClick={() => navigate("/invoices/new")}>
-            Create Invoice
-          </Button>
-        </Card>
+        <EmptyState
+          icon="📄"
+          title="No invoices found"
+          description="Create your first invoice to get started"
+          actionLabel="Create Invoice"
+          onAction={() => navigate("/invoices/new")}
+        />
       ) : (
         <div className="space-y-4">
           {invoices.map((invoice) => (
@@ -266,7 +257,6 @@ const InvoiceList = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => {
@@ -291,18 +281,13 @@ const InvoiceList = () => {
             >
               Cancel
             </Button>
-            <Button
-              variant="neon"
-              className="flex-1 !bg-red-500 !shadow-red-500/25"
-              onClick={handleDelete}
-            >
+            <Button variant="danger" className="flex-1" onClick={handleDelete}>
               Delete
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Payment Modal */}
       <Modal
         isOpen={showPaymentModal}
         onClose={() => {
@@ -318,22 +303,22 @@ const InvoiceList = () => {
       >
         <div className="space-y-4">
           {selectedInvoice && (
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="flex justify-between mb-2">
-                <span className="text-gray-400">Invoice</span>
-                <span className="text-white">
+                <span className="text-gray-500 text-sm">Invoice</span>
+                <span className="text-white text-sm font-medium">
                   {selectedInvoice.invoiceNumber}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
-                <span className="text-gray-400">Total</span>
-                <span className="text-white">
+                <span className="text-gray-500 text-sm">Total</span>
+                <span className="text-white text-sm">
                   {formatCurrency(selectedInvoice.total)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Balance Due</span>
-                <span className="text-amber-400 font-semibold">
+                <span className="text-gray-500 text-sm">Balance Due</span>
+                <span className="text-amber-400 text-sm font-semibold">
                   {formatCurrency(selectedInvoice.balanceDue)}
                 </span>
               </div>
@@ -352,7 +337,7 @@ const InvoiceList = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
               Payment Method
             </label>
             <select
@@ -363,10 +348,10 @@ const InvoiceList = () => {
                   paymentMethod: e.target.value,
                 }))
               }
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
+              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-neon-green/50 transition-all duration-300 [&>option]:bg-[#1a1a2e] [&>option]:text-white"
             >
               {paymentMethods.map((method) => (
-                <option key={method.id} value={method.id}>
+                <option key={method.value} value={method.value}>
                   {method.label}
                 </option>
               ))}

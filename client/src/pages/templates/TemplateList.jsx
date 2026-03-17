@@ -1,21 +1,27 @@
+// src/pages/templates/TemplateList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import Loader from "../../components/common/Loader";
+import FilterBar from "../../components/common/FilterBar";
+import StatCards from "../../components/common/StatCards";
+import EmptyState from "../../components/common/EmptyState";
+import ErrorAlert from "../../components/common/ErrorAlert";
 import TemplateCard from "../../components/templates/TemplateCard";
+import { templateFilterConfig } from "../../config/filterConfigs";
 import templateService from "../../services/templateService";
-import { templateTypes, templateCategories } from "../../data/placeholders";
 import { toast } from "react-hot-toast";
 
 const TemplateList = () => {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
   const [filters, setFilters] = useState({
+    search: "",
     type: "",
     category: "",
-    search: "",
   });
 
   useEffect(() => {
@@ -26,6 +32,7 @@ const TemplateList = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
+      setError("");
       const params = {};
       if (filters.type) params.type = filters.type;
       if (filters.category) params.category = filters.category;
@@ -33,8 +40,8 @@ const TemplateList = () => {
 
       const response = await templateService.getTemplates(params);
       setTemplates(response.data || []);
-    } catch (error) {
-      console.error("Error fetching templates:", error);
+    } catch (err) {
+      setError("Failed to load templates");
       toast.error("Failed to load templates");
     } finally {
       setLoading(false);
@@ -45,22 +52,28 @@ const TemplateList = () => {
     try {
       const response = await templateService.getTemplateStats();
       setStats(response.data);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
     }
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({ search: "", type: "", category: "" });
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this template?"))
       return;
-
     try {
       await templateService.deleteTemplate(id);
       toast.success("Template deleted successfully");
       fetchTemplates();
       fetchStats();
-    } catch (error) {
-      console.error("Error deleting template:", error);
+    } catch (err) {
       toast.error("Failed to delete template");
     }
   };
@@ -70,8 +83,7 @@ const TemplateList = () => {
       await templateService.duplicateTemplate(id);
       toast.success("Template duplicated successfully");
       fetchTemplates();
-    } catch (error) {
-      console.error("Error duplicating template:", error);
+    } catch (err) {
       toast.error("Failed to duplicate template");
     }
   };
@@ -82,19 +94,60 @@ const TemplateList = () => {
       toast.success(response.message || "Default templates created");
       fetchTemplates();
       fetchStats();
-    } catch (error) {
-      console.error("Error seeding templates:", error);
+    } catch (err) {
       toast.error("Failed to create default templates");
     }
   };
 
+  const buildStatCards = () => {
+    if (!stats) return [];
+    const cards = [
+      {
+        label: "Total Templates",
+        value: stats.totalTemplates || 0,
+        color: "from-purple-500 to-pink-500",
+        icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      },
+    ];
+    const typeColors = {
+      invoice: "from-neon-green to-emerald-500",
+      proposal: "from-neon-blue to-cyan-400",
+      agreement: "from-amber-500 to-orange-500",
+      receipt: "from-pink-500 to-rose-500",
+    };
+    const typeIcons = {
+      invoice:
+        "M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z",
+      proposal:
+        "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+      agreement:
+        "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+      receipt:
+        "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+    };
+    if (stats.typeCounts) {
+      Object.entries(stats.typeCounts).forEach(([type, count]) => {
+        cards.push({
+          label: type.charAt(0).toUpperCase() + type.slice(1),
+          value: count,
+          color: typeColors[type] || "from-gray-400 to-gray-500",
+          icon:
+            typeIcons[type] ||
+            "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+        });
+      });
+    }
+    return cards;
+  };
+
+  const hasFilters = filters.search || filters.type || filters.category;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Templates</h1>
-          <p className="text-gray-400 mt-1">Manage your document templates</p>
+          <p className="text-gray-500 mt-1">Manage your document templates</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={handleSeedDefaults}>
@@ -113,7 +166,7 @@ const TemplateList = () => {
             </svg>
             Load Defaults
           </Button>
-          <Button onClick={() => navigate("/templates/new")}>
+          <Button variant="neon" onClick={() => navigate("/templates/new")}>
             <svg
               className="w-4 h-4 mr-2"
               fill="none"
@@ -132,79 +185,33 @@ const TemplateList = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-white">
-              {stats.totalTemplates}
-            </p>
-            <p className="text-sm text-gray-400">Total Templates</p>
-          </div>
-          {Object.entries(stats.typeCounts || {}).map(([type, count]) => (
-            <div key={type} className="glass-card p-4 text-center">
-              <p className="text-2xl font-bold text-white">{count}</p>
-              <p className="text-sm text-gray-400 capitalize">{type}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <ErrorAlert message={error} onClose={() => setError("")} />
 
-      {/* Filters */}
-      <div className="glass-card p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              placeholder="Search templates..."
-              value={filters.search}
-              onChange={(e) =>
-                setFilters({ ...filters, search: e.target.value })
-              }
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50"
-            />
-          </div>
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-          >
-            <option value="">All Types</option>
-            {templateTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.category}
-            onChange={(e) =>
-              setFilters({ ...filters, category: e.target.value })
-            }
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-          >
-            <option value="">All Categories</option>
-            {templateCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.label}
-              </option>
-            ))}
-          </select>
-          {(filters.type || filters.category || filters.search) && (
-            <button
-              onClick={() => setFilters({ type: "", category: "", search: "" })}
-              className="text-sm text-gray-400 hover:text-white"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
+      <StatCards stats={buildStatCards()} />
 
-      {/* Templates Grid */}
+      <FilterBar
+        searchPlaceholder="Search templates..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onReset={handleResetFilters}
+        filterConfig={templateFilterConfig}
+      />
+
       {loading ? (
         <Loader />
-      ) : templates.length > 0 ? (
+      ) : templates.length === 0 ? (
+        <EmptyState
+          icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          title="No templates found"
+          description={
+            hasFilters
+              ? "Try adjusting your filters"
+              : "Get started by creating your first template or loading defaults"
+          }
+          actionLabel={hasFilters ? undefined : "Create Template"}
+          onAction={hasFilters ? undefined : () => navigate("/templates/new")}
+        />
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((template) => (
             <TemplateCard
@@ -214,40 +221,6 @@ const TemplateList = () => {
               onDuplicate={handleDuplicate}
             />
           ))}
-        </div>
-      ) : (
-        <div className="glass-card p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-white mb-2">
-            No templates found
-          </h3>
-          <p className="text-gray-400 mb-6">
-            {filters.search || filters.type || filters.category
-              ? "Try adjusting your filters"
-              : "Get started by creating your first template or loading defaults"}
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <Button variant="ghost" onClick={handleSeedDefaults}>
-              Load Defaults
-            </Button>
-            <Button onClick={() => navigate("/templates/new")}>
-              Create Template
-            </Button>
-          </div>
         </div>
       )}
     </div>

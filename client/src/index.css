@@ -36,6 +36,10 @@ body {
   @apply bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl;
 }
 
+.glass-card-bg {
+  @apply bg-white/[0.42] backdrop-blur-xl border border-white/10 rounded-2xl;
+}
+
 /* Neon glow effects */
 .shadow-neon-green {
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
@@ -117,5 +121,15 @@ select option {
 @media print {
   .print\\:hidden {
     display: none !important;
+  }
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
