@@ -24,11 +24,7 @@ const Settings = () => {
       label: "Billing",
       icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
     },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
-    },
+
     {
       id: "security",
       label: "Security",
@@ -144,7 +140,7 @@ const Settings = () => {
                 <Input
                   label="Company Name"
                   name="companyName"
-                  placeholder="Your Agency Name"
+                  placeholder="Cavnex"
                 />
                 <Input
                   label="GST Number"
@@ -154,13 +150,13 @@ const Settings = () => {
                 <Input
                   label="Website"
                   name="website"
-                  placeholder="https://youragency.com"
+                  placeholder="https://cavnex.in"
                 />
                 <Input
                   label="Email"
                   name="companyEmail"
                   type="email"
-                  placeholder="contact@youragency.com"
+                  placeholder="contact@cavnex.com"
                 />
               </div>
 
@@ -218,58 +214,6 @@ const Settings = () => {
                   <Button variant="ghost">Cancel</Button>
                   <Button variant="neon">Update Password</Button>
                 </div>
-              </div>
-            </Card>
-          )}
-
-          {activeTab === "notifications" && (
-            <Card
-              title="Notification Settings"
-              subtitle="Manage your notification preferences"
-            >
-              <div className="space-y-4">
-                {[
-                  {
-                    label: "Email Notifications",
-                    description: "Receive email updates about your account",
-                  },
-                  {
-                    label: "New Lead Alerts",
-                    description: "Get notified when a new lead is received",
-                  },
-                  {
-                    label: "Invoice Reminders",
-                    description: "Receive reminders for pending invoices",
-                  },
-                  {
-                    label: "Project Updates",
-                    description: "Get updates about project milestones",
-                  },
-                  {
-                    label: "Weekly Reports",
-                    description: "Receive weekly summary reports",
-                  },
-                ].map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5"
-                  >
-                    <div>
-                      <p className="text-white font-medium">{item.label}</p>
-                      <p className="text-sm text-gray-500">
-                        {item.description}
-                      </p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        defaultChecked
-                      />
-                      <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-green"></div>
-                    </label>
-                  </div>
-                ))}
               </div>
             </Card>
           )}

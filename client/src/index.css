@@ -133,3 +133,18 @@ select option {
     transform: translateY(0);
   }
 }
+
+.ant-modal-container {
+  background-color: #2f2b2bdb !important;
+  color: white !important;
+}
+
+.ant-modal-confirm-title {
+  color: white !important;
+}
+
+.ant-modal-mask {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  background: rgba(0, 0, 0, 0.4) !important; /* optional: adjust darkness */
+}

@@ -26,10 +26,8 @@ const MainLayout = () => {
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
-
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
-
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-8 min-h-full">
             <div className="max-w-7xl mx-auto animate-fade-in">

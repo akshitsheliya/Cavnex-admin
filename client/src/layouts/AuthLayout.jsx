@@ -35,7 +35,7 @@ const AuthLayout = () => {
 
       <div className="absolute bottom-4 left-0 right-0 text-center">
         <p className="text-gray-600 text-sm">
-          © 2024 Software Agency. All rights reserved.
+          © 2026 Cavnex infotech. All rights reserved.
         </p>
       </div>
     </div>

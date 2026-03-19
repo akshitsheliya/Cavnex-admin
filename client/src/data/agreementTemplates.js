@@ -7,11 +7,11 @@ export const agreementTypes = [
 ];
 
 export const defaultCompanyInfo = {
-  name: "Your Agency Name",
+  name: "Cavnex",
   address: "",
-  email: "contact@youragency.com",
+  email: "info@cavnex.com",
   phone: "+91 9876543210",
-  website: "www.youragency.com",
+  website: "www.cavnex.in",
   gstin: "",
   pan: "",
 };

@@ -42,7 +42,7 @@ const ProposalForm = () => {
 
     // Cover Page
     coverPage: {
-      companyName: "Your Agency Name",
+      companyName: "Cavnex",
       tagline: "Building Digital Excellence",
       preparedFor: "",
       preparedBy: "",

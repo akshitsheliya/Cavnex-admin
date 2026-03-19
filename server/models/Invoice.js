@@ -71,7 +71,7 @@ const invoiceSchema = new mongoose.Schema(
 
     // Company Info
     companyInfo: {
-      name: { type: String, default: "Your Agency Name" },
+      name: { type: String, default: "Cavnex" },
       address: { type: mongoose.Schema.Types.Mixed },
       city: { type: String },
       state: { type: String },

@@ -37,7 +37,7 @@ const proposalSchema = new mongoose.Schema(
     },
     project: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
     coverPage: {
-      companyName: { type: String, default: "Your Agency Name" },
+      companyName: { type: String, default: "Cavnex" },
       companyLogo: { type: String },
       tagline: { type: String },
       preparedFor: { type: String },

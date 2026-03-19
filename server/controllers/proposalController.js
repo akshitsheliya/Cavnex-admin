@@ -454,7 +454,7 @@ const createFromCalculator = async (req, res, next) => {
       client: clientId,
       projectType,
       coverPage: {
-        companyName: "Your Agency Name",
+        companyName: "Cavnex",
         preparedFor: client.businessName || client.clientName,
         date: new Date(),
       },

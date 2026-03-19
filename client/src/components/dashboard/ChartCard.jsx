@@ -12,9 +12,10 @@ const ChartCard = ({
   const months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
   const chartData = data.length > 0 ? data : defaultData;
+  const maxValue = Math.max(...chartData, 1);
 
   return (
-    <div className="glass-card p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-white">{title}</h3>
@@ -33,23 +34,26 @@ const ChartCard = ({
 
       {type === "bar" && (
         <div className="h-64 flex items-end justify-between gap-2 px-4">
-          {chartData.map((height, i) => (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center gap-2 group"
-            >
-              <div className="relative w-full">
-                <div
-                  className="w-full bg-gradient-to-t from-neon-green/50 to-neon-blue/50 rounded-t-lg transition-all duration-500 hover:from-neon-green hover:to-neon-blue cursor-pointer group-hover:shadow-[0_0_20px_rgba(0,255,136,0.3)]"
-                  style={{ height: `${height * 2.5}px` }}
-                />
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-dark-600 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  {height}%
+          {chartData.map((value, i) => {
+            const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
+            return (
+              <div
+                key={i}
+                className="flex-1 flex flex-col items-center gap-2 group"
+              >
+                <div className="relative w-full">
+                  <div
+                    className="w-full bg-gradient-to-t from-neon-green/50 to-neon-blue/50 rounded-t-lg transition-all duration-500 hover:from-neon-green hover:to-neon-blue cursor-pointer group-hover:shadow-[0_0_20px_rgba(0,255,136,0.3)]"
+                    style={{ height: `${Math.max(height * 2.5, 4)}px` }}
+                  />
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-dark-600 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    {value}%
+                  </div>
                 </div>
+                <span className="text-xs text-gray-500">{months[i]}</span>
               </div>
-              <span className="text-xs text-gray-500">{months[i]}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

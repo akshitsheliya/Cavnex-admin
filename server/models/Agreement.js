@@ -59,7 +59,7 @@ const agreementSchema = new mongoose.Schema(
       ],
     },
     companyInfo: {
-      name: { type: String, default: "Your Agency Name" },
+      name: { type: String, default: "Cavnex" },
       address: { type: String },
       email: { type: String },
       phone: { type: String },

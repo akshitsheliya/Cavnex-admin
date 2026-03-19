@@ -1,24 +1,24 @@
 export const defaultCompanyInfo = {
-  name: "Your Agency Name",
+  name: "Cavnex",
   address: "123 Business Street",
   city: "Mumbai",
   state: "Maharashtra",
   zipCode: "400001",
   country: "India",
-  email: "contact@youragency.com",
+  email: "info@cavnex.com",
   phone: "+91 9876543210",
-  website: "www.youragency.com",
+  website: "www.cavnex.in",
   gstin: "27XXXXXXXXXX1ZX",
   pan: "XXXXXXXXXX",
 };
 
 export const defaultBankDetails = {
   bankName: "Your Bank Name",
-  accountName: "Your Agency Name",
+  accountName: "Cavnex",
   accountNumber: "XXXXXXXXXXXX",
   ifscCode: "XXXXXXXXXX",
   branch: "Branch Name",
-  upiId: "youragency@upi",
+  upiId: "cavnex@upi",
 };
 
 export const defaultTerms = `1. Payment is due within 30 days of invoice date.
@@ -29,7 +29,7 @@ export const defaultTerms = `1. Payment is due within 30 days of invoice date.
 
 export const defaultNotes = `Thank you for your business!
 
-For any queries regarding this invoice, please contact us at accounts@youragency.com`;
+For any queries regarding this invoice, please contact us at contact@cavnex.com`;
 
 export const paymentMethods = [
   { id: "bank_transfer", label: "Bank Transfer", icon: "🏦" },
