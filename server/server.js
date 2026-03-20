@@ -45,7 +45,7 @@ app.use(
 );
 
 // ✅ VERY IMPORTANT (preflight fix)
-app.options("*", cors());
+app.options("/*", cors());
 
 // Body Parsing
 app.use(express.json({ limit: "10mb" }));
