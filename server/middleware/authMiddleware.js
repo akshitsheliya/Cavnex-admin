@@ -21,7 +21,11 @@ const protect = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id);
+    // ✅ UPDATED: Populate organization
+    const user = await User.findById(decoded.id).populate(
+      "organization",
+      "name slug isActive"
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -34,6 +38,14 @@ const protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: "Your account has been deactivated",
+      });
+    }
+
+    // ✅ NEW: Check if organization is active (if exists)
+    if (user.organization && !user.organization.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "Your organization has been deactivated",
       });
     }
 
@@ -97,7 +109,10 @@ const optionalAuth = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.id).populate(
+      "organization",
+      "name slug"
+    );
 
     if (user && user.isActive) {
       req.user = user;

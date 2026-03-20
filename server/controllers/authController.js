@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Organization = require("../models/Organization"); // ✅ NEW IMPORT
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 
@@ -19,6 +20,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
     avatar: user.avatar,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    organization: user.organization, // ✅ NEW: Include organization in response
   };
 
   res.status(statusCode).json({
@@ -29,6 +31,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
   });
 };
 
+// ✅ UPDATED: Register with organization creation
 const register = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -43,7 +46,7 @@ const register = async (req, res, next) => {
       });
     }
 
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, organizationName } = req.body;
 
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -53,6 +56,7 @@ const register = async (req, res, next) => {
       });
     }
 
+    // ✅ Step 1: Create user first (without organization)
     const user = await User.create({
       name,
       email,
@@ -60,6 +64,29 @@ const register = async (req, res, next) => {
       role: role || "admin",
     });
 
+    // ✅ Step 2: Create organization with user as owner
+    const orgName = organizationName || `${name}'s Organization`;
+    const organization = await Organization.create({
+      name: orgName,
+      owner: user._id,
+      members: [
+        {
+          user: user._id,
+          role: "owner",
+          joinedAt: new Date(),
+        },
+      ],
+      settings: {
+        companyName: orgName,
+        companyEmail: email,
+      },
+    });
+
+    // ✅ Step 3: Update user with organization reference
+    user.organization = organization._id;
+    await user.save({ validateBeforeSave: false });
+
+    // ✅ Send response (same format as before for backward compatibility)
     sendTokenResponse(user, 201, res, "Registration successful");
   } catch (error) {
     next(error);
@@ -82,9 +109,10 @@ const login = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+password"
-    );
+    // ✅ UPDATED: Populate organization
+    const user = await User.findOne({ email: email.toLowerCase() })
+      .select("+password")
+      .populate("organization", "name slug");
 
     if (!user) {
       return res.status(401).json({
@@ -120,7 +148,11 @@ const login = async (req, res, next) => {
 
 const getProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
+    // ✅ UPDATED: Populate organization
+    const user = await User.findById(req.user._id).populate(
+      "organization",
+      "name slug settings"
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -172,7 +204,7 @@ const updateProfile = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(req.user._id, updateData, {
       new: true,
       runValidators: true,
-    });
+    }).populate("organization", "name slug");
 
     res.status(200).json({
       success: true,
@@ -240,7 +272,10 @@ const logout = async (req, res, next) => {
 
 const verifyToken = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).populate(
+      "organization",
+      "name slug"
+    );
 
     if (!user) {
       return res.status(404).json({

@@ -1,6 +1,16 @@
 const Lead = require("../models/Lead");
 const { validationResult } = require("express-validator");
 
+// ✅ HELPER: Build organization/user query
+const buildOrgQuery = (req) => {
+  // If organization exists, filter by organization (all org members see same data)
+  // Otherwise, fall back to createdBy (backward compatibility)
+  if (req.organizationId) {
+    return { organization: req.organizationId };
+  }
+  return { createdBy: req.user._id };
+};
+
 const getLeads = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -22,7 +32,8 @@ const getLeads = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    const query = { createdBy: req.user._id };
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQuery(req);
 
     if (status) {
       query.status = status;
@@ -81,10 +92,10 @@ const getLead = async (req, res, next) => {
       });
     }
 
-    const lead = await Lead.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    }).populate("assignedTo", "name email");
+    // ✅ UPDATED: Use organization-based query
+    const query = { _id: req.params.id, ...buildOrgQuery(req) };
+
+    const lead = await Lead.findOne(query).populate("assignedTo", "name email");
 
     if (!lead) {
       return res.status(404).json({
@@ -116,10 +127,13 @@ const createLead = async (req, res, next) => {
       });
     }
 
-    const existingLead = await Lead.findOne({
+    // ✅ UPDATED: Check duplicate within organization
+    const duplicateQuery = {
       $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
-      createdBy: req.user._id,
-    });
+      ...buildOrgQuery(req),
+    };
+
+    const existingLead = await Lead.findOne(duplicateQuery);
 
     if (existingLead) {
       const duplicateField =
@@ -130,9 +144,11 @@ const createLead = async (req, res, next) => {
       });
     }
 
+    // ✅ UPDATED: Add organization to lead
     const lead = await Lead.create({
       ...req.body,
       createdBy: req.user._id,
+      organization: req.organizationId || undefined, // ✅ NEW
     });
 
     res.status(201).json({
@@ -159,10 +175,9 @@ const updateLead = async (req, res, next) => {
       });
     }
 
-    const lead = await Lead.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = { _id: req.params.id, ...buildOrgQuery(req) };
+    const lead = await Lead.findOne(query);
 
     if (!lead) {
       return res.status(404).json({
@@ -174,7 +189,7 @@ const updateLead = async (req, res, next) => {
     if (req.body.email && req.body.email !== lead.email) {
       const existingLead = await Lead.findOne({
         email: req.body.email.toLowerCase(),
-        createdBy: req.user._id,
+        ...buildOrgQuery(req),
         _id: { $ne: req.params.id },
       });
       if (existingLead) {
@@ -188,7 +203,7 @@ const updateLead = async (req, res, next) => {
     if (req.body.phone && req.body.phone !== lead.phone) {
       const existingLead = await Lead.findOne({
         phone: req.body.phone,
-        createdBy: req.user._id,
+        ...buildOrgQuery(req),
         _id: { $ne: req.params.id },
       });
       if (existingLead) {
@@ -226,10 +241,9 @@ const deleteLead = async (req, res, next) => {
       });
     }
 
-    const lead = await Lead.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = { _id: req.params.id, ...buildOrgQuery(req) };
+    const lead = await Lead.findOne(query);
 
     if (!lead) {
       return res.status(404).json({
@@ -276,8 +290,11 @@ const updateLeadStatus = async (req, res, next) => {
       });
     }
 
+    // ✅ UPDATED: Use organization-based query
+    const query = { _id: req.params.id, ...buildOrgQuery(req) };
+
     const lead = await Lead.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
+      query,
       { status, updatedAt: new Date() },
       { new: true }
     );
@@ -301,10 +318,9 @@ const updateLeadStatus = async (req, res, next) => {
 
 const convertToClient = async (req, res, next) => {
   try {
-    const lead = await Lead.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = { _id: req.params.id, ...buildOrgQuery(req) };
+    const lead = await Lead.findOne(query);
 
     if (!lead) {
       return res.status(404).json({
@@ -322,16 +338,17 @@ const convertToClient = async (req, res, next) => {
 
     const Client = require("../models/Client");
 
+    // ✅ UPDATED: Add organization to client
     const client = await Client.create({
-      name: lead.businessName || lead.leadName,
-      contactPerson: lead.leadName,
+      clientName: lead.leadName,
+      businessName: lead.businessName || lead.leadName,
       email: lead.email,
       phone: lead.phone,
-      city: lead.city,
-      businessType: lead.businessType,
+      address: { city: lead.city },
       source: lead.source,
       notes: lead.notes,
       createdBy: req.user._id,
+      organization: req.organizationId || undefined, // ✅ NEW
     });
 
     lead.convertedToClient = true;
@@ -354,26 +371,27 @@ const convertToClient = async (req, res, next) => {
 
 const getLeadStats = async (req, res, next) => {
   try {
+    // ✅ UPDATED: Use organization-based stats
+    const orgId = req.organizationId;
     const userId = req.user._id;
 
     const [statusCounts, sourceCounts, totalLeads, recentLeads] =
       await Promise.all([
-        Lead.getStatusCounts(userId),
-        Lead.getSourceCounts(userId),
-        Lead.countDocuments({ createdBy: userId }),
-        Lead.find({ createdBy: userId })
-          .sort({ createdAt: -1 })
-          .limit(5)
-          .lean(),
+        Lead.getStatusCounts(orgId, userId),
+        Lead.getSourceCounts(orgId, userId),
+        Lead.countDocuments(buildOrgQuery(req)),
+        Lead.find(buildOrgQuery(req)).sort({ createdAt: -1 }).limit(5).lean(),
       ]);
 
+    const matchQuery = orgId ? { organization: orgId } : { createdBy: userId };
+
     const totalValue = await Lead.aggregate([
-      { $match: { createdBy: userId } },
+      { $match: matchQuery },
       { $group: { _id: null, total: { $sum: "$estimatedValue" } } },
     ]);
 
     const wonLeads = await Lead.countDocuments({
-      createdBy: userId,
+      ...buildOrgQuery(req),
       status: "closed_won",
     });
 

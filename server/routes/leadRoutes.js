@@ -11,6 +11,7 @@ const {
   getLeadStats,
 } = require("../controllers/leadController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createLeadValidator,
   updateLeadValidator,
@@ -18,7 +19,9 @@ const {
   leadIdValidator,
 } = require("../validators/leadValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 router.get("/stats", getLeadStats);
 

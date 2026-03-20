@@ -11,6 +11,7 @@ const {
   getAgreementStats,
 } = require("../controllers/agreementController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createAgreementValidator,
   updateAgreementValidator,
@@ -18,7 +19,9 @@ const {
   agreementIdValidator,
 } = require("../validators/agreementValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 // Stats route
 router.get("/stats", getAgreementStats);

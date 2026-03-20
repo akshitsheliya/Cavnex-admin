@@ -12,6 +12,7 @@ const {
   createFromCalculator,
 } = require("../controllers/proposalController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createProposalValidator,
   updateProposalValidator,
@@ -19,13 +20,12 @@ const {
   proposalIdValidator,
 } = require("../validators/proposalValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 // Stats route
 router.get("/stats", getProposalStats);
-
-// Create from calculator
-router.post("/from-calculator", createFromCalculator);
 
 // Main CRUD routes
 router
@@ -42,5 +42,8 @@ router
 // Additional actions
 router.patch("/:id/status", proposalIdValidator, updateProposalStatus);
 router.post("/:id/duplicate", proposalIdValidator, duplicateProposal);
+
+// Calculator route
+router.post("/from-calculator", createFromCalculator);
 
 module.exports = router;

@@ -32,6 +32,12 @@ const milestoneSchema = new mongoose.Schema(
 
 const projectSchema = new mongoose.Schema(
   {
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
     projectName: {
       type: String,
       required: [true, "Project name is required"],
@@ -147,6 +153,7 @@ projectSchema.index({ projectType: 1 });
 projectSchema.index({ createdBy: 1 });
 projectSchema.index({ startDate: 1 });
 projectSchema.index({ deadline: 1 });
+projectSchema.index({ organization: 1 }); // ✅ NEW INDEX
 
 // Virtuals
 projectSchema.virtual("isOverdue").get(function () {
@@ -186,24 +193,39 @@ projectSchema.pre("save", function () {
   }
 });
 
-// Static methods
-projectSchema.statics.getStatusCounts = async function (userId) {
+// ✅ UPDATED: Static methods to use organizationId
+projectSchema.statics.getStatusCounts = async function (
+  organizationId,
+  userId
+) {
+  const match = organizationId
+    ? { organization: organizationId }
+    : { createdBy: userId };
   return this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     { $group: { _id: "$status", count: { $sum: 1 } } },
   ]);
 };
 
-projectSchema.statics.getTypeCounts = async function (userId) {
+projectSchema.statics.getTypeCounts = async function (organizationId, userId) {
+  const match = organizationId
+    ? { organization: organizationId }
+    : { createdBy: userId };
   return this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     { $group: { _id: "$projectType", count: { $sum: 1 } } },
   ]);
 };
 
-projectSchema.statics.getRevenueStats = async function (userId) {
+projectSchema.statics.getRevenueStats = async function (
+  organizationId,
+  userId
+) {
+  const match = organizationId
+    ? { organization: organizationId }
+    : { createdBy: userId };
   return this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     {
       $group: {
         _id: null,

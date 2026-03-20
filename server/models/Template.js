@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const templateSchema = new mongoose.Schema(
   {
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
     name: {
       type: String,
       required: [true, "Template name is required"],
@@ -145,6 +151,7 @@ templateSchema.index({ category: 1 });
 templateSchema.index({ createdBy: 1 });
 templateSchema.index({ tags: 1 });
 templateSchema.index({ isActive: 1 });
+templateSchema.index({ organization: 1 }); // ✅ NEW INDEX
 
 const Template = mongoose.model("Template", templateSchema);
 

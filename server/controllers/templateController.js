@@ -1,5 +1,11 @@
 const Template = require("../models/Template");
 const { validationResult } = require("express-validator");
+const {
+  buildOrgQuery,
+  buildOrgQueryWithFilters,
+  getAggregateMatch,
+  withOrgData,
+} = require("../utils/orgHelper");
 
 // Get all templates
 const getTemplates = async (req, res, next) => {
@@ -25,7 +31,8 @@ const getTemplates = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    const query = { createdBy: req.user._id };
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQuery(req);
 
     if (type) query.type = type;
     if (category) query.category = category;
@@ -74,10 +81,9 @@ const getTemplates = async (req, res, next) => {
 // Get single template
 const getTemplate = async (req, res, next) => {
   try {
-    const template = await Template.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const template = await Template.findOne(query);
 
     if (!template) {
       return res.status(404).json({
@@ -98,10 +104,9 @@ const getTemplate = async (req, res, next) => {
 // Get template by slug
 const getTemplateBySlug = async (req, res, next) => {
   try {
-    const template = await Template.findOne({
-      slug: req.params.slug,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { slug: req.params.slug });
+    const template = await Template.findOne(query);
 
     if (!template) {
       return res.status(404).json({
@@ -131,10 +136,8 @@ const createTemplate = async (req, res, next) => {
       });
     }
 
-    const template = await Template.create({
-      ...req.body,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Add organization to template
+    const template = await Template.create(withOrgData(req, req.body));
 
     // Extract and store placeholders
     const extractedPlaceholders = template.extractPlaceholders();
@@ -175,10 +178,9 @@ const updateTemplate = async (req, res, next) => {
       });
     }
 
-    const template = await Template.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const template = await Template.findOne(query);
 
     if (!template) {
       return res.status(404).json({
@@ -233,10 +235,9 @@ const updateTemplate = async (req, res, next) => {
 // Delete template
 const deleteTemplate = async (req, res, next) => {
   try {
-    const template = await Template.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const template = await Template.findOne(query);
 
     if (!template) {
       return res.status(404).json({
@@ -276,10 +277,9 @@ const renderTemplate = async (req, res, next) => {
       });
     }
 
-    const template = await Template.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const template = await Template.findOne(query);
 
     if (!template) {
       return res.status(404).json({
@@ -318,10 +318,9 @@ const renderTemplate = async (req, res, next) => {
 // Duplicate template
 const duplicateTemplate = async (req, res, next) => {
   try {
-    const template = await Template.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const template = await Template.findOne(query);
 
     if (!template) {
       return res.status(404).json({
@@ -340,6 +339,7 @@ const duplicateTemplate = async (req, res, next) => {
     templateData.isSystem = false;
     templateData.usageCount = 0;
 
+    // ✅ Keep organization
     const newTemplate = await Template.create(templateData);
 
     res.status(201).json({
@@ -355,20 +355,21 @@ const duplicateTemplate = async (req, res, next) => {
 // Get template statistics
 const getTemplateStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    // ✅ UPDATED: Use organization-based stats
+    const matchQuery = getAggregateMatch(req);
 
     const [totalTemplates, typeCounts, categoryCounts, mostUsed] =
       await Promise.all([
-        Template.countDocuments({ createdBy: userId }),
+        Template.countDocuments(buildOrgQuery(req)),
         Template.aggregate([
-          { $match: { createdBy: userId } },
+          { $match: matchQuery },
           { $group: { _id: "$type", count: { $sum: 1 } } },
         ]),
         Template.aggregate([
-          { $match: { createdBy: userId } },
+          { $match: matchQuery },
           { $group: { _id: "$category", count: { $sum: 1 } } },
         ]),
-        Template.find({ createdBy: userId })
+        Template.find(buildOrgQuery(req))
           .sort({ usageCount: -1 })
           .limit(5)
           .select("name type usageCount")
@@ -411,22 +412,24 @@ const getDefaultTemplates = async (req, res, next) => {
 // Seed default templates
 const seedDefaultTemplates = async (req, res, next) => {
   try {
-    const userId = req.user._id;
     const defaults = getSystemTemplates();
 
     const templates = [];
     for (const template of defaults) {
+      // ✅ UPDATED: Check within organization
       const exists = await Template.findOne({
         slug: template.slug,
-        createdBy: userId,
+        ...buildOrgQuery(req),
       });
 
       if (!exists) {
-        const newTemplate = await Template.create({
-          ...template,
-          createdBy: userId,
-          isSystem: true,
-        });
+        // ✅ UPDATED: Add organization to template
+        const newTemplate = await Template.create(
+          withOrgData(req, {
+            ...template,
+            isSystem: true,
+          })
+        );
         templates.push(newTemplate);
       }
     }

@@ -13,6 +13,7 @@ const {
   getClientStats,
 } = require("../controllers/clientController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createClientValidator,
   updateClientValidator,
@@ -20,7 +21,9 @@ const {
   clientIdValidator,
 } = require("../validators/clientValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 router.get("/stats", getClientStats);
 

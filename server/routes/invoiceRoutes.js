@@ -13,6 +13,7 @@ const {
   sendInvoice,
 } = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createInvoiceValidator,
   updateInvoiceValidator,
@@ -21,7 +22,9 @@ const {
   recordPaymentValidator,
 } = require("../validators/invoiceValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 // Stats route
 router.get("/stats", getInvoiceStats);

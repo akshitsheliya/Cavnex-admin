@@ -1,5 +1,11 @@
 const Client = require("../models/Client");
 const { validationResult } = require("express-validator");
+const {
+  buildOrgQuery,
+  buildOrgQueryWithFilters,
+  getAggregateMatch,
+  withOrgData,
+} = require("../utils/orgHelper");
 
 const getClients = async (req, res, next) => {
   try {
@@ -22,15 +28,10 @@ const getClients = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    const query = { createdBy: req.user._id };
+    const query = buildOrgQuery(req); // ✅ UPDATED
 
-    if (status) {
-      query.status = status;
-    }
-
-    if (industry) {
-      query.industry = industry;
-    }
+    if (status) query.status = status;
+    if (industry) query.industry = industry;
 
     if (search) {
       query.$or = [
@@ -80,10 +81,11 @@ const getClient = async (req, res, next) => {
       });
     }
 
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    }).populate("leadId", "leadName source");
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
+    const client = await Client.findOne(query).populate(
+      "leadId",
+      "leadName source"
+    );
 
     if (!client) {
       return res.status(404).json({
@@ -115,9 +117,10 @@ const createClient = async (req, res, next) => {
       });
     }
 
+    // ✅ UPDATED: Check duplicate within organization
     const existingClient = await Client.findOne({
       $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
-      createdBy: req.user._id,
+      ...buildOrgQuery(req),
     });
 
     if (existingClient) {
@@ -131,10 +134,8 @@ const createClient = async (req, res, next) => {
       });
     }
 
-    const client = await Client.create({
-      ...req.body,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Add organization
+    const client = await Client.create(withOrgData(req, req.body));
 
     res.status(201).json({
       success: true,
@@ -160,10 +161,8 @@ const updateClient = async (req, res, next) => {
       });
     }
 
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
+    const client = await Client.findOne(query);
 
     if (!client) {
       return res.status(404).json({
@@ -175,7 +174,7 @@ const updateClient = async (req, res, next) => {
     if (req.body.email && req.body.email !== client.email) {
       const existingClient = await Client.findOne({
         email: req.body.email.toLowerCase(),
-        createdBy: req.user._id,
+        ...buildOrgQuery(req),
         _id: { $ne: req.params.id },
       });
       if (existingClient) {
@@ -189,7 +188,7 @@ const updateClient = async (req, res, next) => {
     if (req.body.phone && req.body.phone !== client.phone) {
       const existingClient = await Client.findOne({
         phone: req.body.phone,
-        createdBy: req.user._id,
+        ...buildOrgQuery(req),
         _id: { $ne: req.params.id },
       });
       if (existingClient) {
@@ -227,10 +226,8 @@ const deleteClient = async (req, res, next) => {
       });
     }
 
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
+    const client = await Client.findOne(query);
 
     if (!client) {
       return res.status(404).json({
@@ -269,8 +266,9 @@ const updateClientStatus = async (req, res, next) => {
       });
     }
 
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
     const client = await Client.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
+      query,
       { status, updatedAt: new Date() },
       { new: true }
     );
@@ -294,10 +292,8 @@ const updateClientStatus = async (req, res, next) => {
 
 const getClientProjects = async (req, res, next) => {
   try {
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
+    const client = await Client.findOne(query);
 
     if (!client) {
       return res.status(404).json({
@@ -307,7 +303,10 @@ const getClientProjects = async (req, res, next) => {
     }
 
     const Project = require("../models/Project");
-    const projects = await Project.find({ client: req.params.id })
+    const projects = await Project.find({
+      client: req.params.id,
+      ...buildOrgQuery(req), // ✅ UPDATED
+    })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -322,10 +321,8 @@ const getClientProjects = async (req, res, next) => {
 
 const getClientInvoices = async (req, res, next) => {
   try {
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
+    const client = await Client.findOne(query);
 
     if (!client) {
       return res.status(404).json({
@@ -335,7 +332,10 @@ const getClientInvoices = async (req, res, next) => {
     }
 
     const Invoice = require("../models/Invoice");
-    const invoices = await Invoice.find({ client: req.params.id })
+    const invoices = await Invoice.find({
+      client: req.params.id,
+      ...buildOrgQuery(req), // ✅ UPDATED
+    })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -350,10 +350,8 @@ const getClientInvoices = async (req, res, next) => {
 
 const getClientProposals = async (req, res, next) => {
   try {
-    const client = await Client.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id }); // ✅ UPDATED
+    const client = await Client.findOne(query);
 
     if (!client) {
       return res.status(404).json({
@@ -363,7 +361,10 @@ const getClientProposals = async (req, res, next) => {
     }
 
     const Proposal = require("../models/Proposal");
-    const proposals = await Proposal.find({ client: req.params.id })
+    const proposals = await Proposal.find({
+      client: req.params.id,
+      ...buildOrgQuery(req), // ✅ UPDATED
+    })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -378,7 +379,9 @@ const getClientProposals = async (req, res, next) => {
 
 const getClientStats = async (req, res, next) => {
   try {
+    const orgId = req.organizationId;
     const userId = req.user._id;
+    const matchQuery = getAggregateMatch(req); // ✅ UPDATED
 
     const [
       statusCounts,
@@ -387,21 +390,18 @@ const getClientStats = async (req, res, next) => {
       recentClients,
       totalRevenue,
     ] = await Promise.all([
-      Client.getStatusCounts(userId),
-      Client.getIndustryCounts(userId),
-      Client.countDocuments({ createdBy: userId }),
-      Client.find({ createdBy: userId })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean(),
+      Client.getStatusCounts(orgId, userId),
+      Client.getIndustryCounts(orgId, userId),
+      Client.countDocuments(buildOrgQuery(req)),
+      Client.find(buildOrgQuery(req)).sort({ createdAt: -1 }).limit(5).lean(),
       Client.aggregate([
-        { $match: { createdBy: userId } },
+        { $match: matchQuery },
         { $group: { _id: null, total: { $sum: "$totalRevenue" } } },
       ]),
     ]);
 
     const activeClients = await Client.countDocuments({
-      createdBy: userId,
+      ...buildOrgQuery(req),
       status: "active",
     });
 

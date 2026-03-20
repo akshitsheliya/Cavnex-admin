@@ -14,6 +14,7 @@ const {
   seedDefaultTemplates,
 } = require("../controllers/templateController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createTemplateValidator,
   updateTemplateValidator,
@@ -22,7 +23,9 @@ const {
   renderTemplateValidator,
 } = require("../validators/templateValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 // Stats route
 router.get("/stats", getTemplateStats);

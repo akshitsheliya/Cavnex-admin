@@ -2,6 +2,12 @@ const Proposal = require("../models/Proposal");
 const Client = require("../models/Client");
 const Project = require("../models/Project");
 const { validationResult } = require("express-validator");
+const {
+  buildOrgQuery,
+  buildOrgQueryWithFilters,
+  getAggregateMatch,
+  withOrgData,
+} = require("../utils/orgHelper");
 
 // Get all proposals
 const getProposals = async (req, res, next) => {
@@ -25,7 +31,8 @@ const getProposals = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    const query = { createdBy: req.user._id };
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQuery(req);
 
     if (status) query.status = status;
     if (client) query.client = client;
@@ -69,10 +76,10 @@ const getProposals = async (req, res, next) => {
 // Get single proposal
 const getProposal = async (req, res, next) => {
   try {
-    const proposal = await Proposal.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    })
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
+    const proposal = await Proposal.findOne(query)
       .populate("client")
       .populate("project");
 
@@ -104,11 +111,9 @@ const createProposal = async (req, res, next) => {
       });
     }
 
-    // Verify client exists
-    const clientExists = await Client.findOne({
-      _id: req.body.client,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Verify client exists within organization
+    const clientQuery = buildOrgQueryWithFilters(req, { _id: req.body.client });
+    const clientExists = await Client.findOne(clientQuery);
 
     if (!clientExists) {
       return res.status(404).json({
@@ -117,12 +122,12 @@ const createProposal = async (req, res, next) => {
       });
     }
 
-    // If project is provided, verify it exists
+    // If project is provided, verify it exists within organization
     if (req.body.project) {
-      const projectExists = await Project.findOne({
+      const projectQuery = buildOrgQueryWithFilters(req, {
         _id: req.body.project,
-        createdBy: req.user._id,
       });
+      const projectExists = await Project.findOne(projectQuery);
 
       if (!projectExists) {
         return res.status(404).json({
@@ -160,10 +165,8 @@ const createProposal = async (req, res, next) => {
       };
     }
 
-    const proposal = await Proposal.create({
-      ...req.body,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Add organization to proposal
+    const proposal = await Proposal.create(withOrgData(req, req.body));
 
     const populatedProposal = await Proposal.findById(proposal._id)
       .populate("client", "clientName businessName email")
@@ -191,10 +194,9 @@ const updateProposal = async (req, res, next) => {
       });
     }
 
-    const proposal = await Proposal.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const proposal = await Proposal.findOne(query);
 
     if (!proposal) {
       return res.status(404).json({
@@ -237,10 +239,9 @@ const updateProposal = async (req, res, next) => {
 // Delete proposal
 const deleteProposal = async (req, res, next) => {
   try {
-    const proposal = await Proposal.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const proposal = await Proposal.findOne(query);
 
     if (!proposal) {
       return res.status(404).json({
@@ -308,11 +309,12 @@ const updateProposalStatus = async (req, res, next) => {
         break;
     }
 
-    const proposal = await Proposal.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
-      updateData,
-      { new: true }
-    ).populate("client", "clientName businessName email");
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
+    const proposal = await Proposal.findOneAndUpdate(query, updateData, {
+      new: true,
+    }).populate("client", "clientName businessName email");
 
     if (!proposal) {
       return res.status(404).json({
@@ -334,10 +336,9 @@ const updateProposalStatus = async (req, res, next) => {
 // Duplicate proposal
 const duplicateProposal = async (req, res, next) => {
   try {
-    const proposal = await Proposal.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const proposal = await Proposal.findOne(query);
 
     if (!proposal) {
       return res.status(404).json({
@@ -363,6 +364,7 @@ const duplicateProposal = async (req, res, next) => {
     validUntil.setDate(validUntil.getDate() + 30);
     proposalData.validUntil = validUntil;
 
+    // ✅ Keep organization
     const newProposal = await Proposal.create(proposalData);
 
     const populatedProposal = await Proposal.findById(newProposal._id).populate(
@@ -383,22 +385,23 @@ const duplicateProposal = async (req, res, next) => {
 // Get proposal stats
 const getProposalStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    // ✅ UPDATED: Use organization-based stats
+    const matchQuery = getAggregateMatch(req);
 
     const [totalProposals, statusCounts, recentProposals, totalValue] =
       await Promise.all([
-        Proposal.countDocuments({ createdBy: userId }),
+        Proposal.countDocuments(buildOrgQuery(req)),
         Proposal.aggregate([
-          { $match: { createdBy: userId } },
+          { $match: matchQuery },
           { $group: { _id: "$status", count: { $sum: 1 } } },
         ]),
-        Proposal.find({ createdBy: userId })
+        Proposal.find(buildOrgQuery(req))
           .populate("client", "businessName")
           .sort({ createdAt: -1 })
           .limit(5)
           .lean(),
         Proposal.aggregate([
-          { $match: { createdBy: userId, status: "accepted" } },
+          { $match: { ...matchQuery, status: "accepted" } },
           { $group: { _id: null, total: { $sum: "$pricing.total" } } },
         ]),
       ]);
@@ -435,11 +438,9 @@ const createFromCalculator = async (req, res, next) => {
       calculation,
     } = req.body;
 
-    // Verify client exists
-    const client = await Client.findOne({
-      _id: clientId,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Verify client exists within organization
+    const clientQuery = buildOrgQueryWithFilters(req, { _id: clientId });
+    const client = await Client.findOne(clientQuery);
 
     if (!client) {
       return res.status(404).json({
@@ -558,10 +559,10 @@ const createFromCalculator = async (req, res, next) => {
         },
       ],
       status: "draft",
-      createdBy: req.user._id,
     };
 
-    const proposal = await Proposal.create(proposalData);
+    // ✅ UPDATED: Add organization to proposal
+    const proposal = await Proposal.create(withOrgData(req, proposalData));
 
     const populatedProposal = await Proposal.findById(proposal._id).populate(
       "client",

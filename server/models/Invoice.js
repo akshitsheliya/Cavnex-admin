@@ -42,6 +42,12 @@ const addressSchema = new mongoose.Schema(
 
 const invoiceSchema = new mongoose.Schema(
   {
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
     invoiceNumber: { type: String, unique: true },
     client: {
       type: mongoose.Schema.Types.ObjectId,
@@ -180,9 +186,6 @@ invoiceSchema.pre("save", async function () {
     this.invoiceNumber = `INV-${year}${month}-${String(count + 1).padStart(4, "0")}`;
   }
 
-  // Convert address objects to strings if needed (for PDF generation compatibility)
-  // Keep as-is since we're using Mixed type now
-
   // Calculate item amounts
   if (this.items && this.items.length > 0) {
     this.items.forEach((item) => {
@@ -250,11 +253,16 @@ invoiceSchema.index({ status: 1 });
 invoiceSchema.index({ createdBy: 1 });
 invoiceSchema.index({ dueDate: 1 });
 invoiceSchema.index({ invoiceDate: 1 });
+invoiceSchema.index({ organization: 1 }); // ✅ NEW INDEX
 
-// Static methods
-invoiceSchema.statics.getStats = async function (userId) {
+// ✅ UPDATED: Static methods to use organizationId
+invoiceSchema.statics.getStats = async function (organizationId, userId) {
+  const match = organizationId
+    ? { organization: organizationId }
+    : { createdBy: userId };
+
   const stats = await this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     {
       $group: {
         _id: null,
@@ -267,7 +275,7 @@ invoiceSchema.statics.getStats = async function (userId) {
   ]);
 
   const statusCounts = await this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     { $group: { _id: "$status", count: { $sum: 1 } } },
   ]);
 

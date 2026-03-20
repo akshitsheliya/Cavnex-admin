@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const agreementSchema = new mongoose.Schema(
   {
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
     agreementNumber: { type: String, unique: true },
     title: {
       type: String,
@@ -190,6 +196,7 @@ agreementSchema.virtual("dynamicFields.fullAddress").get(function () {
 agreementSchema.index({ client: 1 });
 agreementSchema.index({ status: 1 });
 agreementSchema.index({ createdBy: 1 });
+agreementSchema.index({ organization: 1 }); // ✅ NEW INDEX
 
 const Agreement = mongoose.model("Agreement", agreementSchema);
 

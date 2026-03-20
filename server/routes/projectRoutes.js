@@ -15,6 +15,7 @@ const {
   getProjectStats,
 } = require("../controllers/projectController");
 const { protect } = require("../middleware/authMiddleware");
+const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
 const {
   createProjectValidator,
   updateProjectValidator,
@@ -22,7 +23,9 @@ const {
   projectIdValidator,
 } = require("../validators/projectValidator");
 
+// ✅ Apply both middlewares
 router.use(protect);
+router.use(attachOrganization); // ✅ NEW LINE
 
 router.get("/stats", getProjectStats);
 

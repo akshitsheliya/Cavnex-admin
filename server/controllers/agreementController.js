@@ -1,6 +1,12 @@
 const Agreement = require("../models/Agreement");
 const Client = require("../models/Client");
 const { validationResult } = require("express-validator");
+const {
+  buildOrgQuery,
+  buildOrgQueryWithFilters,
+  getAggregateMatch,
+  withOrgData,
+} = require("../utils/orgHelper");
 
 // Get all agreements
 const getAgreements = async (req, res, next) => {
@@ -25,7 +31,8 @@ const getAgreements = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    const query = { createdBy: req.user._id };
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQuery(req);
 
     if (status) query.status = status;
     if (client) query.client = client;
@@ -72,10 +79,10 @@ const getAgreements = async (req, res, next) => {
 // Get single agreement
 const getAgreement = async (req, res, next) => {
   try {
-    const agreement = await Agreement.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    })
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
+    const agreement = await Agreement.findOne(query)
       .populate("client")
       .populate("project")
       .populate("proposal");
@@ -108,11 +115,9 @@ const createAgreement = async (req, res, next) => {
       });
     }
 
-    // Verify client exists
-    const clientExists = await Client.findOne({
-      _id: req.body.client,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Verify client exists within organization
+    const clientQuery = buildOrgQueryWithFilters(req, { _id: req.body.client });
+    const clientExists = await Client.findOne(clientQuery);
 
     if (!clientExists) {
       return res.status(404).json({
@@ -126,10 +131,8 @@ const createAgreement = async (req, res, next) => {
       req.body.sections = getDefaultSections(req.body.dynamicFields);
     }
 
-    const agreement = await Agreement.create({
-      ...req.body,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Add organization to agreement
+    const agreement = await Agreement.create(withOrgData(req, req.body));
 
     const populatedAgreement = await Agreement.findById(agreement._id).populate(
       "client",
@@ -158,10 +161,9 @@ const updateAgreement = async (req, res, next) => {
       });
     }
 
-    const agreement = await Agreement.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const agreement = await Agreement.findOne(query);
 
     if (!agreement) {
       return res.status(404).json({
@@ -200,10 +202,9 @@ const updateAgreement = async (req, res, next) => {
 // Delete agreement
 const deleteAgreement = async (req, res, next) => {
   try {
-    const agreement = await Agreement.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const agreement = await Agreement.findOne(query);
 
     if (!agreement) {
       return res.status(404).json({
@@ -275,11 +276,12 @@ const updateAgreementStatus = async (req, res, next) => {
         break;
     }
 
-    const agreement = await Agreement.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
-      updateData,
-      { new: true }
-    ).populate("client", "clientName businessName email");
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
+    const agreement = await Agreement.findOneAndUpdate(query, updateData, {
+      new: true,
+    }).populate("client", "clientName businessName email");
 
     if (!agreement) {
       return res.status(404).json({
@@ -301,10 +303,9 @@ const updateAgreementStatus = async (req, res, next) => {
 // Duplicate agreement
 const duplicateAgreement = async (req, res, next) => {
   try {
-    const agreement = await Agreement.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const agreement = await Agreement.findOne(query);
 
     if (!agreement) {
       return res.status(404).json({
@@ -329,6 +330,7 @@ const duplicateAgreement = async (req, res, next) => {
       client: { signed: false },
     };
 
+    // ✅ Keep organization
     const newAgreement = await Agreement.create(agreementData);
 
     const populatedAgreement = await Agreement.findById(
@@ -348,16 +350,17 @@ const duplicateAgreement = async (req, res, next) => {
 // Get agreement stats
 const getAgreementStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    // ✅ UPDATED: Use organization-based stats
+    const matchQuery = getAggregateMatch(req);
 
     const [totalAgreements, statusCounts, recentAgreements, totalValue] =
       await Promise.all([
-        Agreement.countDocuments({ createdBy: userId }),
+        Agreement.countDocuments(buildOrgQuery(req)),
         Agreement.aggregate([
-          { $match: { createdBy: userId } },
+          { $match: matchQuery },
           { $group: { _id: "$status", count: { $sum: 1 } } },
         ]),
-        Agreement.find({ createdBy: userId })
+        Agreement.find(buildOrgQuery(req))
           .populate("client", "businessName")
           .sort({ createdAt: -1 })
           .limit(5)
@@ -365,7 +368,7 @@ const getAgreementStats = async (req, res, next) => {
         Agreement.aggregate([
           {
             $match: {
-              createdBy: userId,
+              ...matchQuery,
               status: { $in: ["signed", "active", "completed"] },
             },
           },
@@ -395,7 +398,7 @@ const getDefaultSections = (dynamicFields) => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: dynamicFields.currency || "INR",
+      currency: dynamicFields?.currency || "INR",
       maximumFractionDigits: 0,
     }).format(amount || 0);
   };
@@ -403,7 +406,7 @@ const getDefaultSections = (dynamicFields) => {
   return {
     scopeOfWork: {
       title: "Scope of Work",
-      content: `The Developer agrees to design, develop, and deliver the ${dynamicFields.projectName} project as described in this agreement. The scope includes all features, functionalities, and deliverables as mutually agreed upon by both parties.`,
+      content: `The Developer agrees to design, develop, and deliver the ${dynamicFields?.projectName || "project"} project as described in this agreement. The scope includes all features, functionalities, and deliverables as mutually agreed upon by both parties.`,
       items: [],
     },
     deliverables: {
@@ -419,7 +422,7 @@ const getDefaultSections = (dynamicFields) => {
     },
     paymentTerms: {
       title: "Payment Terms",
-      content: `The total project cost is ${formatCurrency(dynamicFields.price)}. Payment shall be made according to the following schedule:\n\n• 40% upon project commencement\n• 30% upon design approval\n• 30% upon final delivery and acceptance\n\nAll payments are due within 7 days of invoice date. Late payments may incur a 2% monthly interest charge.`,
+      content: `The total project cost is ${formatCurrency(dynamicFields?.price)}. Payment shall be made according to the following schedule:\n\n• 40% upon project commencement\n• 30% upon design approval\n• 30% upon final delivery and acceptance\n\nAll payments are due within 7 days of invoice date. Late payments may incur a 2% monthly interest charge.`,
     },
     ownership: {
       title: "Intellectual Property & Ownership",

@@ -2,6 +2,12 @@ const Invoice = require("../models/Invoice");
 const Client = require("../models/Client");
 const Project = require("../models/Project");
 const { validationResult } = require("express-validator");
+const {
+  buildOrgQuery,
+  buildOrgQueryWithFilters,
+  getAggregateMatch,
+  withOrgData,
+} = require("../utils/orgHelper");
 
 // Get all invoices
 const getInvoices = async (req, res, next) => {
@@ -28,7 +34,8 @@ const getInvoices = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    const query = { createdBy: req.user._id };
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQuery(req);
 
     if (status) query.status = status;
     if (client) query.client = client;
@@ -50,10 +57,10 @@ const getInvoices = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const sortOptions = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
 
-    // Update overdue invoices
+    // ✅ UPDATED: Update overdue invoices within organization
     await Invoice.updateMany(
       {
-        createdBy: req.user._id,
+        ...buildOrgQuery(req),
         dueDate: { $lt: new Date() },
         status: { $nin: ["paid", "cancelled", "overdue"] },
       },
@@ -89,10 +96,10 @@ const getInvoices = async (req, res, next) => {
 // Get single invoice
 const getInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    })
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
+    const invoice = await Invoice.findOne(query)
       .populate("client")
       .populate("project");
 
@@ -124,11 +131,9 @@ const createInvoice = async (req, res, next) => {
       });
     }
 
-    // Verify client exists
-    const client = await Client.findOne({
-      _id: req.body.client,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Verify client exists within organization
+    const clientQuery = buildOrgQueryWithFilters(req, { _id: req.body.client });
+    const client = await Client.findOne(clientQuery);
 
     if (!client) {
       return res.status(404).json({
@@ -145,14 +150,12 @@ const createInvoice = async (req, res, next) => {
         address: client.address,
         email: client.email,
         phone: client.phone,
-        gstin: client.gstin,
+        gstin: client.gstNumber,
       };
     }
 
-    const invoice = await Invoice.create({
-      ...req.body,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Add organization to invoice
+    const invoice = await Invoice.create(withOrgData(req, req.body));
 
     const populatedInvoice = await Invoice.findById(invoice._id)
       .populate("client", "clientName businessName email")
@@ -180,10 +183,9 @@ const updateInvoice = async (req, res, next) => {
       });
     }
 
-    const invoice = await Invoice.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const invoice = await Invoice.findOne(query);
 
     if (!invoice) {
       return res.status(404).json({
@@ -226,10 +228,9 @@ const updateInvoice = async (req, res, next) => {
 // Delete invoice
 const deleteInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const invoice = await Invoice.findOne(query);
 
     if (!invoice) {
       return res.status(404).json({
@@ -300,11 +301,12 @@ const updateInvoiceStatus = async (req, res, next) => {
         break;
     }
 
-    const invoice = await Invoice.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
-      updateData,
-      { new: true }
-    ).populate("client", "clientName businessName email");
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
+    const invoice = await Invoice.findOneAndUpdate(query, updateData, {
+      new: true,
+    }).populate("client", "clientName businessName email");
 
     if (!invoice) {
       return res.status(404).json({
@@ -337,10 +339,9 @@ const recordPayment = async (req, res, next) => {
 
     const { amount, paymentMethod, paymentDate, paymentReference } = req.body;
 
-    const invoice = await Invoice.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const invoice = await Invoice.findOne(query);
 
     if (!invoice) {
       return res.status(404).json({
@@ -389,10 +390,9 @@ const recordPayment = async (req, res, next) => {
 // Duplicate invoice
 const duplicateInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id,
-    });
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+    const invoice = await Invoice.findOne(query);
 
     if (!invoice) {
       return res.status(404).json({
@@ -421,6 +421,7 @@ const duplicateInvoice = async (req, res, next) => {
     dueDate.setDate(dueDate.getDate() + 30);
     invoiceData.dueDate = dueDate;
 
+    // ✅ Keep organization
     const newInvoice = await Invoice.create(invoiceData);
 
     const populatedInvoice = await Invoice.findById(newInvoice._id).populate(
@@ -441,11 +442,13 @@ const duplicateInvoice = async (req, res, next) => {
 // Get invoice stats
 const getInvoiceStats = async (req, res, next) => {
   try {
+    // ✅ UPDATED: Use organization-based stats
+    const orgId = req.organizationId;
     const userId = req.user._id;
 
-    const stats = await Invoice.getStats(userId);
+    const stats = await Invoice.getStats(orgId, userId);
 
-    const recentInvoices = await Invoice.find({ createdBy: userId })
+    const recentInvoices = await Invoice.find(buildOrgQuery(req))
       .populate("client", "businessName clientName")
       .sort({ createdAt: -1 })
       .limit(5)
@@ -455,10 +458,12 @@ const getInvoiceStats = async (req, res, next) => {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+    const matchQuery = getAggregateMatch(req);
+
     const monthlyRevenue = await Invoice.aggregate([
       {
         $match: {
-          createdBy: userId,
+          ...matchQuery,
           status: "paid",
           paidAt: { $gte: sixMonthsAgo },
         },
@@ -492,8 +497,11 @@ const getInvoiceStats = async (req, res, next) => {
 // Send invoice (update status to sent)
 const sendInvoice = async (req, res, next) => {
   try {
+    // ✅ UPDATED: Use organization-based query
+    const query = buildOrgQueryWithFilters(req, { _id: req.params.id });
+
     const invoice = await Invoice.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
+      query,
       {
         status: "sent",
         sentAt: new Date(),
@@ -508,9 +516,6 @@ const sendInvoice = async (req, res, next) => {
         message: "Invoice not found",
       });
     }
-
-    // Here you would send email notification
-    // await sendInvoiceEmail(invoice)
 
     res.status(200).json({
       success: true,

@@ -23,6 +23,12 @@ const milestoneSchema = new mongoose.Schema(
 
 const proposalSchema = new mongoose.Schema(
   {
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
     proposalNumber: { type: String, unique: true },
     title: {
       type: String,
@@ -202,6 +208,7 @@ proposalSchema.methods.calculatePricing = function () {
 proposalSchema.index({ client: 1 });
 proposalSchema.index({ status: 1 });
 proposalSchema.index({ createdBy: 1 });
+proposalSchema.index({ organization: 1 }); // ✅ NEW INDEX
 
 const Proposal = mongoose.model("Proposal", proposalSchema);
 

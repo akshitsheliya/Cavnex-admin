@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const leadSchema = new mongoose.Schema(
   {
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
     leadName: {
       type: String,
       required: [true, "Lead name is required"],
@@ -104,23 +110,30 @@ leadSchema.index({ status: 1 });
 leadSchema.index({ source: 1 });
 leadSchema.index({ createdAt: -1 });
 leadSchema.index({ createdBy: 1 });
+leadSchema.index({ organization: 1 }); // ✅ NEW INDEX
 
 // Pre save hook - Mongoose 9.x syntax (NO next)
 leadSchema.pre("save", function () {
   this.updatedAt = new Date();
 });
 
-// Static methods
-leadSchema.statics.getStatusCounts = async function (userId) {
+// ✅ UPDATED: Static methods to use organizationId
+leadSchema.statics.getStatusCounts = async function (organizationId, userId) {
+  const match = organizationId
+    ? { organization: organizationId }
+    : { createdBy: userId };
   return this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     { $group: { _id: "$status", count: { $sum: 1 } } },
   ]);
 };
 
-leadSchema.statics.getSourceCounts = async function (userId) {
+leadSchema.statics.getSourceCounts = async function (organizationId, userId) {
+  const match = organizationId
+    ? { organization: organizationId }
+    : { createdBy: userId };
   return this.aggregate([
-    { $match: { createdBy: userId } },
+    { $match: match },
     { $group: { _id: "$source", count: { $sum: 1 } } },
   ]);
 };

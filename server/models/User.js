@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    // ✅ NEW FIELD: Organization reference
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+    },
   },
   {
     timestamps: true,
@@ -77,6 +82,9 @@ userSchema.methods.toJSON = function () {
   delete user.password;
   return user;
 };
+
+// ✅ NEW INDEX: For organization queries
+userSchema.index({ organization: 1 });
 
 const User = mongoose.model("User", userSchema);
 

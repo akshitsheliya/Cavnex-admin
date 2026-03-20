@@ -10,6 +10,7 @@ const proposalRoutes = require("./proposalRoutes");
 const agreementRoutes = require("./agreementRoutes");
 const invoiceRoutes = require("./invoiceRoutes");
 const templateRoutes = require("./templateRoutes");
+const organizationRoutes = require("./organizationRoutes"); // ✅ NEW IMPORT
 
 router.use("/test", testRoutes);
 router.use("/auth", authRoutes);
@@ -20,6 +21,7 @@ router.use("/proposals", proposalRoutes);
 router.use("/agreements", agreementRoutes);
 router.use("/invoices", invoiceRoutes);
 router.use("/templates", templateRoutes);
+router.use("/org", organizationRoutes); // ✅ NEW ROUTE
 
 router.get("/", (req, res) => {
   res.json({
@@ -36,6 +38,7 @@ router.get("/", (req, res) => {
       agreements: "/api/agreements",
       invoices: "/api/invoices",
       templates: "/api/templates",
+      organization: "/api/org", // ✅ NEW ENDPOINT
     },
   });
 });
