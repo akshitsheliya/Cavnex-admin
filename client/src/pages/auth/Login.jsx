@@ -165,7 +165,7 @@ const Login = () => {
           </Button>
         </form>
 
-        <div className="mt-8 text-center">
+        {/* <div className="mt-8 text-center">
           <p className="text-gray-400">
             Don't have an account?{" "}
             <Link
@@ -175,9 +175,9 @@ const Login = () => {
               Create account
             </Link>
           </p>
-        </div>
+        </div> */}
 
-        <div className="mt-8 pt-8 border-t border-white/10">
+        {/* <div className="mt-8 pt-8 border-t border-white/10">
           <p className="text-center text-gray-500 text-sm mb-4">
             Or continue with
           </p>
@@ -210,7 +210,7 @@ const Login = () => {
               <span className="text-sm text-gray-300">GitHub</span>
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
