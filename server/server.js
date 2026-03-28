@@ -16,6 +16,9 @@ connectDB();
 
 const app = express();
 
+// ✅ Trust proxy (required for Render, Railway, Heroku, etc.)
+app.set("trust proxy", 1);
+
 // Security Middleware
 app.use(
   helmet({
@@ -24,7 +27,7 @@ app.use(
   })
 );
 
-// ✅ CORS Configuration
+// CORS Configuration
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
@@ -36,9 +39,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (Postman, mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -51,11 +52,10 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
   maxAge: 86400,
-  preflightContinue: false, // ✅ ADDED
-  optionsSuccessStatus: 204, // ✅ ADDED
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 };
 
-// ✅ Apply CORS middleware (handles preflight automatically)
 app.use(cors(corsOptions));
 
 // Body Parsing
