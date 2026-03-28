@@ -1,17 +1,8 @@
 const Lead = require("../models/Lead");
 const { validationResult } = require("express-validator");
 
-// ✅ HELPER: Build organization/user query
-const buildOrgQuery = (req) => {
-  // If organization exists, filter by organization (all org members see same data)
-  // Otherwise, fall back to createdBy (backward compatibility)
-  if (req.organizationId) {
-    return { organization: req.organizationId };
-  }
-  return { createdBy: req.user._id };
-};
-
 const getLeads = async (req, res, next) => {
+  console.log("🔥🔥🔥 GET LEADS CALLED 🔥🔥🔥");
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -32,9 +23,26 @@ const getLeads = async (req, res, next) => {
       sortOrder = "desc",
     } = req.query;
 
-    // ✅ UPDATED: Use organization-based query
-    const query = buildOrgQuery(req);
+    // ✅ BUILD QUERY PROPERLY
+    let query = {};
 
+    // Build organization filter
+    if (req.organizationId) {
+      query.$or = [
+        { organization: req.organizationId },
+        { organization: { $exists: false } },
+        { organization: null },
+      ];
+    } else {
+      // Fallback to createdBy if no organization
+      query.$or = [
+        { createdBy: req.user._id },
+        { createdBy: { $exists: false } },
+        { createdBy: null },
+      ];
+    }
+
+    // Add additional filters
     if (status) {
       query.status = status;
     }
@@ -44,17 +52,24 @@ const getLeads = async (req, res, next) => {
     }
 
     if (search) {
-      query.$or = [
-        { leadName: { $regex: search, $options: "i" } },
-        { businessName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { city: { $regex: search, $options: "i" } },
+      query.$and = [
+        {
+          $or: [
+            { leadName: { $regex: search, $options: "i" } },
+            { businessName: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { city: { $regex: search, $options: "i" } },
+          ],
+        },
       ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const sortOptions = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
+
+    console.log("📊 Lead Query:", JSON.stringify(query, null, 2));
+    console.log("🔑 Organization ID:", req.organizationId);
 
     const [leads, total] = await Promise.all([
       Lead.find(query)
@@ -65,6 +80,9 @@ const getLeads = async (req, res, next) => {
         .lean(),
       Lead.countDocuments(query),
     ]);
+
+    console.log(`✅ Found ${total} total leads`);
+    console.log(`📄 Returning ${leads.length} leads on page ${page}`);
 
     res.status(200).json({
       success: true,
@@ -77,6 +95,7 @@ const getLeads = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error("❌ getLeads error:", error);
     next(error);
   }
 };
@@ -92,12 +111,27 @@ const getLead = async (req, res, next) => {
       });
     }
 
-    // ✅ UPDATED: Use organization-based query
-    const query = { _id: req.params.id, ...buildOrgQuery(req) };
-
-    const lead = await Lead.findOne(query).populate("assignedTo", "name email");
+    const lead = await Lead.findById(req.params.id).populate(
+      "assignedTo",
+      "name email"
+    );
 
     if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    // Check access
+    const hasAccess =
+      !lead.organization ||
+      !lead.createdBy ||
+      (req.organizationId &&
+        lead.organization?.toString() === req.organizationId.toString()) ||
+      lead.createdBy?.toString() === req.user._id.toString();
+
+    if (!hasAccess) {
       return res.status(404).json({
         success: false,
         message: "Lead not found",
@@ -127,11 +161,16 @@ const createLead = async (req, res, next) => {
       });
     }
 
-    // ✅ UPDATED: Check duplicate within organization
+    // Check duplicate
     const duplicateQuery = {
       $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
-      ...buildOrgQuery(req),
     };
+
+    if (req.organizationId) {
+      duplicateQuery.organization = req.organizationId;
+    } else {
+      duplicateQuery.createdBy = req.user._id;
+    }
 
     const existingLead = await Lead.findOne(duplicateQuery);
 
@@ -144,11 +183,10 @@ const createLead = async (req, res, next) => {
       });
     }
 
-    // ✅ UPDATED: Add organization to lead
     const lead = await Lead.create({
       ...req.body,
       createdBy: req.user._id,
-      organization: req.organizationId || undefined, // ✅ NEW
+      organization: req.organizationId || undefined,
     });
 
     res.status(201).json({
@@ -175,11 +213,24 @@ const updateLead = async (req, res, next) => {
       });
     }
 
-    // ✅ UPDATED: Use organization-based query
-    const query = { _id: req.params.id, ...buildOrgQuery(req) };
-    const lead = await Lead.findOne(query);
+    const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    // Check access
+    const hasAccess =
+      !lead.organization ||
+      !lead.createdBy ||
+      (req.organizationId &&
+        lead.organization?.toString() === req.organizationId.toString()) ||
+      lead.createdBy?.toString() === req.user._id.toString();
+
+    if (!hasAccess) {
       return res.status(404).json({
         success: false,
         message: "Lead not found",
@@ -189,7 +240,6 @@ const updateLead = async (req, res, next) => {
     if (req.body.email && req.body.email !== lead.email) {
       const existingLead = await Lead.findOne({
         email: req.body.email.toLowerCase(),
-        ...buildOrgQuery(req),
         _id: { $ne: req.params.id },
       });
       if (existingLead) {
@@ -203,7 +253,6 @@ const updateLead = async (req, res, next) => {
     if (req.body.phone && req.body.phone !== lead.phone) {
       const existingLead = await Lead.findOne({
         phone: req.body.phone,
-        ...buildOrgQuery(req),
         _id: { $ne: req.params.id },
       });
       if (existingLead) {
@@ -214,9 +263,22 @@ const updateLead = async (req, res, next) => {
       }
     }
 
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date(),
+    };
+
+    // Assign to org if public lead
+    if (!lead.organization && req.organizationId) {
+      updateData.organization = req.organizationId;
+    }
+    if (!lead.createdBy) {
+      updateData.createdBy = req.user._id;
+    }
+
     const updatedLead = await Lead.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, updatedAt: new Date() },
+      updateData,
       { new: true, runValidators: true }
     ).populate("assignedTo", "name email");
 
@@ -241,11 +303,23 @@ const deleteLead = async (req, res, next) => {
       });
     }
 
-    // ✅ UPDATED: Use organization-based query
-    const query = { _id: req.params.id, ...buildOrgQuery(req) };
-    const lead = await Lead.findOne(query);
+    const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    const hasAccess =
+      !lead.organization ||
+      !lead.createdBy ||
+      (req.organizationId &&
+        lead.organization?.toString() === req.organizationId.toString()) ||
+      lead.createdBy?.toString() === req.user._id.toString();
+
+    if (!hasAccess) {
       return res.status(404).json({
         success: false,
         message: "Lead not found",
@@ -283,6 +357,7 @@ const updateLeadStatus = async (req, res, next) => {
       "closed_won",
       "closed_lost",
     ];
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -290,14 +365,7 @@ const updateLeadStatus = async (req, res, next) => {
       });
     }
 
-    // ✅ UPDATED: Use organization-based query
-    const query = { _id: req.params.id, ...buildOrgQuery(req) };
-
-    const lead = await Lead.findOneAndUpdate(
-      query,
-      { status, updatedAt: new Date() },
-      { new: true }
-    );
+    const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
       return res.status(404).json({
@@ -306,10 +374,30 @@ const updateLeadStatus = async (req, res, next) => {
       });
     }
 
+    const hasAccess =
+      !lead.organization ||
+      !lead.createdBy ||
+      (req.organizationId &&
+        lead.organization?.toString() === req.organizationId.toString()) ||
+      lead.createdBy?.toString() === req.user._id.toString();
+
+    if (!hasAccess) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    const updatedLead = await Lead.findByIdAndUpdate(
+      req.params.id,
+      { status, updatedAt: new Date() },
+      { new: true }
+    );
+
     res.status(200).json({
       success: true,
       message: "Lead status updated successfully",
-      data: lead,
+      data: updatedLead,
     });
   } catch (error) {
     next(error);
@@ -318,11 +406,23 @@ const updateLeadStatus = async (req, res, next) => {
 
 const convertToClient = async (req, res, next) => {
   try {
-    // ✅ UPDATED: Use organization-based query
-    const query = { _id: req.params.id, ...buildOrgQuery(req) };
-    const lead = await Lead.findOne(query);
+    const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    const hasAccess =
+      !lead.organization ||
+      !lead.createdBy ||
+      (req.organizationId &&
+        lead.organization?.toString() === req.organizationId.toString()) ||
+      lead.createdBy?.toString() === req.user._id.toString();
+
+    if (!hasAccess) {
       return res.status(404).json({
         success: false,
         message: "Lead not found",
@@ -338,7 +438,6 @@ const convertToClient = async (req, res, next) => {
 
     const Client = require("../models/Client");
 
-    // ✅ UPDATED: Add organization to client
     const client = await Client.create({
       clientName: lead.leadName,
       businessName: lead.businessName || lead.leadName,
@@ -348,21 +447,26 @@ const convertToClient = async (req, res, next) => {
       source: lead.source,
       notes: lead.notes,
       createdBy: req.user._id,
-      organization: req.organizationId || undefined, // ✅ NEW
+      organization: req.organizationId || undefined,
     });
 
     lead.convertedToClient = true;
     lead.clientId = client._id;
     lead.status = "closed_won";
+
+    if (!lead.organization && req.organizationId) {
+      lead.organization = req.organizationId;
+    }
+    if (!lead.createdBy) {
+      lead.createdBy = req.user._id;
+    }
+
     await lead.save();
 
     res.status(200).json({
       success: true,
       message: "Lead converted to client successfully",
-      data: {
-        lead,
-        client,
-      },
+      data: { lead, client },
     });
   } catch (error) {
     next(error);
@@ -371,19 +475,40 @@ const convertToClient = async (req, res, next) => {
 
 const getLeadStats = async (req, res, next) => {
   try {
-    // ✅ UPDATED: Use organization-based stats
     const orgId = req.organizationId;
     const userId = req.user._id;
 
+    const matchQuery = orgId
+      ? {
+          $or: [
+            { organization: orgId },
+            { organization: { $exists: false } },
+            { organization: null },
+          ],
+        }
+      : {
+          $or: [
+            { createdBy: userId },
+            { createdBy: { $exists: false } },
+            { createdBy: null },
+          ],
+        };
+
+    console.log("📊 Stats Query:", JSON.stringify(matchQuery, null, 2));
+
     const [statusCounts, sourceCounts, totalLeads, recentLeads] =
       await Promise.all([
-        Lead.getStatusCounts(orgId, userId),
-        Lead.getSourceCounts(orgId, userId),
-        Lead.countDocuments(buildOrgQuery(req)),
-        Lead.find(buildOrgQuery(req)).sort({ createdAt: -1 }).limit(5).lean(),
+        Lead.aggregate([
+          { $match: matchQuery },
+          { $group: { _id: "$status", count: { $sum: 1 } } },
+        ]),
+        Lead.aggregate([
+          { $match: matchQuery },
+          { $group: { _id: "$source", count: { $sum: 1 } } },
+        ]),
+        Lead.countDocuments(matchQuery),
+        Lead.find(matchQuery).sort({ createdAt: -1 }).limit(5).lean(),
       ]);
-
-    const matchQuery = orgId ? { organization: orgId } : { createdBy: userId };
 
     const totalValue = await Lead.aggregate([
       { $match: matchQuery },
@@ -391,12 +516,14 @@ const getLeadStats = async (req, res, next) => {
     ]);
 
     const wonLeads = await Lead.countDocuments({
-      ...buildOrgQuery(req),
+      ...matchQuery,
       status: "closed_won",
     });
 
     const conversionRate =
       totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(2) : 0;
+
+    console.log(`✅ Stats: ${totalLeads} total leads`);
 
     res.status(200).json({
       success: true,
@@ -416,6 +543,7 @@ const getLeadStats = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error("❌ getLeadStats error:", error);
     next(error);
   }
 };

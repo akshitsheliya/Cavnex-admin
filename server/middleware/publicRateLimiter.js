@@ -33,7 +33,6 @@
 // });
 
 // module.exports = { publicContactLimiter, strictContactLimiter };
-
 const rateLimit = require("express-rate-limit");
 
 // Rate limiter for public contact form
@@ -46,14 +45,6 @@ const publicContactLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // ✅ FIXED: Use default key generator (handles IPv6 properly)
-  keyGenerator: (req) => {
-    // Combine IP with email for more accurate limiting
-    const ip =
-      req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-    const email = req.body?.email || "";
-    return `${ip}-${email}`;
-  },
   skip: (req) => {
     // Skip rate limiting in development
     return process.env.NODE_ENV === "development";
@@ -70,7 +61,6 @@ const strictContactLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // ✅ FIXED: Let express-rate-limit handle IP properly
   skip: (req) => {
     return process.env.NODE_ENV === "development";
   },

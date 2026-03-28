@@ -30,6 +30,16 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    // ✅ ADD THIS LOG
+    if (response.config.url?.includes("/leads")) {
+      console.log("🔍 API Response Debug:", {
+        url: response.config.url,
+        totalFromServer: response.data?.pagination?.total,
+        receivedCount: response.data?.data?.length,
+        firstItem: response.data?.data?.[0]?._id,
+      });
+    }
+
     if (import.meta.env.DEV) {
       console.log(`✅ [API] ${response.config.url}`, response.data);
     }

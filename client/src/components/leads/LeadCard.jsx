@@ -93,6 +93,11 @@ const LeadCard = ({ lead, onDelete, onStatusChange, onConvert }) => {
           <span>{sourceIcons[lead.source] || "📌"}</span>
           <span className="capitalize">{lead.source?.replace("_", " ")}</span>
         </div>
+        {!lead.organization && !lead.createdBy && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+            Website Lead
+          </span>
+        )}
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <svg
             className="w-4 h-4"

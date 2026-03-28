@@ -4,6 +4,11 @@ const leadService = {
   getLeads: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const response = await api.get(`/leads?${queryString}`);
+    console.log("📊 leadService.getLeads response:", {
+      total: response.data?.pagination?.total,
+      count: response.data?.data?.length,
+    });
+
     return response.data;
   },
 
