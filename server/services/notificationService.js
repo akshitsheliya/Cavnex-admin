@@ -1,7 +1,5 @@
 const { Resend } = require("resend");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const sendNewLeadNotification = async (leadData) => {
   console.log("📧 Starting email notification with Resend...");
 
@@ -17,6 +15,8 @@ const sendNewLeadNotification = async (leadData) => {
       "📧 Sending email to:",
       process.env.NOTIFICATION_EMAIL || "cavnexstudio@gmail.com"
     );
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -106,9 +106,9 @@ const sendNewLeadNotification = async (leadData) => {
       </html>
     `;
 
-    // ✅ FIXED: Proper await and response handling
+    // ✅ FIXED: Use verified domain email
     const { data, error } = await resend.emails.send({
-      from: `${process.env.FROM_NAME || "Cavnex Website"} <onboarding@resend.dev>`,
+      from: "Cavnex Website <contact@cavnex.in>", // ✅ Changed from onboarding@resend.dev
       to: [process.env.NOTIFICATION_EMAIL || "cavnexstudio@gmail.com"],
       subject: `🎯 New Lead: ${name} - Cavnex Website`,
       html: htmlContent,
