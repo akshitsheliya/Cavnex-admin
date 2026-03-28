@@ -45,6 +45,7 @@ const createLeadValidator = [
     .optional()
     .isIn([
       "website",
+      "website-contact", // ✅ ADDED THIS
       "instagram",
       "referral",
       "google",
@@ -131,6 +132,7 @@ const updateLeadValidator = [
     .optional()
     .isIn([
       "website",
+      "website-contact", // ✅ ADDED THIS
       "instagram",
       "referral",
       "google",
@@ -199,6 +201,7 @@ const getLeadsValidator = [
     .optional()
     .isIn([
       "website",
+      "website-contact", // ✅ ADDED THIS
       "instagram",
       "referral",
       "google",

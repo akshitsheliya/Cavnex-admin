@@ -24,18 +24,21 @@ app.use(
   })
 );
 
-// CORS Configuration
+// ✅ CORS Configuration
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://admin.cavnex.in",
+  "https://cavnex.in",
+  "https://www.cavnex.in",
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (Postman, mobile apps, etc.)
+    // Allow requests with no origin (Postman, mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -48,9 +51,11 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
   maxAge: 86400,
+  preflightContinue: false, // ✅ ADDED
+  optionsSuccessStatus: 204, // ✅ ADDED
 };
 
-// ✅ Apply CORS middleware
+// ✅ Apply CORS middleware (handles preflight automatically)
 app.use(cors(corsOptions));
 
 // Body Parsing
@@ -96,6 +101,7 @@ const server = app.listen(PORT, () => {
     `\n🚀 Server running in ${process.env.NODE_ENV || "development"} mode`
   );
   console.log(`📡 API URL: http://localhost:${PORT}/api`);
+  console.log(`🌍 Public API: http://localhost:${PORT}/api/public`);
   console.log(`❤️  Health Check: http://localhost:${PORT}/\n`);
   console.log(`🌐 Allowed Origins: ${allowedOrigins.join(", ")}\n`);
 });

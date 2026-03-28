@@ -2,17 +2,10 @@ const mongoose = require("mongoose");
 
 const leadSchema = new mongoose.Schema(
   {
-    // ✅ NEW FIELD: Organization reference
-    organization: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
-      index: true,
-    },
     leadName: {
       type: String,
       required: [true, "Lead name is required"],
       trim: true,
-      minlength: [2, "Lead name must be at least 2 characters"],
       maxlength: [100, "Lead name cannot exceed 100 characters"],
     },
     businessName: {
@@ -45,6 +38,7 @@ const leadSchema = new mongoose.Schema(
       type: String,
       enum: [
         "website",
+        "website-contact", // ✅ NEW SOURCE
         "instagram",
         "referral",
         "google",
@@ -53,7 +47,7 @@ const leadSchema = new mongoose.Schema(
         "facebook",
         "other",
       ],
-      default: "website",
+      default: "other",
     },
     status: {
       type: String,
@@ -84,6 +78,16 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      // Not required for public leads
+    },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      // Not required for public leads
+    },
     convertedToClient: {
       type: Boolean,
       default: false,
@@ -92,36 +96,29 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Client",
     },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-// Indexes
+// Indexes for better query performance
 leadSchema.index({ email: 1 });
 leadSchema.index({ phone: 1 });
 leadSchema.index({ status: 1 });
 leadSchema.index({ source: 1 });
 leadSchema.index({ createdAt: -1 });
-leadSchema.index({ createdBy: 1 });
-leadSchema.index({ organization: 1 }); // ✅ NEW INDEX
+leadSchema.index({ organization: 1, createdAt: -1 });
+leadSchema.index({ source: 1, createdAt: -1 }); // ✅ For public leads query
 
-// Pre save hook - Mongoose 9.x syntax (NO next)
-leadSchema.pre("save", function () {
-  this.updatedAt = new Date();
-});
-
-// ✅ UPDATED: Static methods to use organizationId
+// Static methods for statistics
 leadSchema.statics.getStatusCounts = async function (organizationId, userId) {
   const match = organizationId
     ? { organization: organizationId }
-    : { createdBy: userId };
+    : userId
+      ? { createdBy: userId }
+      : {};
+
   return this.aggregate([
     { $match: match },
     { $group: { _id: "$status", count: { $sum: 1 } } },
@@ -131,13 +128,14 @@ leadSchema.statics.getStatusCounts = async function (organizationId, userId) {
 leadSchema.statics.getSourceCounts = async function (organizationId, userId) {
   const match = organizationId
     ? { organization: organizationId }
-    : { createdBy: userId };
+    : userId
+      ? { createdBy: userId }
+      : {};
+
   return this.aggregate([
     { $match: match },
     { $group: { _id: "$source", count: { $sum: 1 } } },
   ]);
 };
 
-const Lead = mongoose.model("Lead", leadSchema);
-
-module.exports = Lead;
+module.exports = mongoose.model("Lead", leadSchema);
