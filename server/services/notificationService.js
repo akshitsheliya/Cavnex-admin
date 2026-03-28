@@ -1,14 +1,11 @@
 const { Resend } = require("resend");
 
-// Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Send new lead notification email
 const sendNewLeadNotification = async (leadData) => {
   console.log("📧 Starting email notification with Resend...");
 
   try {
-    // Check if Resend API key exists
     if (!process.env.RESEND_API_KEY) {
       console.log("⚠️ RESEND_API_KEY not configured");
       return { success: false, message: "Email service not configured" };
@@ -16,7 +13,10 @@ const sendNewLeadNotification = async (leadData) => {
 
     const { name, email, phone, message, source, createdAt } = leadData;
 
-    console.log("📧 Sending email to:", process.env.NOTIFICATION_EMAIL);
+    console.log(
+      "📧 Sending email to:",
+      process.env.NOTIFICATION_EMAIL || "cavnexstudio@gmail.com"
+    );
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -106,17 +106,23 @@ const sendNewLeadNotification = async (leadData) => {
       </html>
     `;
 
-    const data = await resend.emails.send({
-      from: `${process.env.FROM_NAME || "Cavnex Website"} <onboarding@resend.dev>`, // ✅ Use verified domain or onboarding
+    // ✅ FIXED: Proper await and response handling
+    const { data, error } = await resend.emails.send({
+      from: `${process.env.FROM_NAME || "Cavnex Website"} <onboarding@resend.dev>`,
       to: [process.env.NOTIFICATION_EMAIL || "cavnexstudio@gmail.com"],
       subject: `🎯 New Lead: ${name} - Cavnex Website`,
       html: htmlContent,
       replyTo: email,
     });
 
-    console.log("✅ Email sent successfully via Resend:", data.id);
+    if (error) {
+      console.error("❌ Resend error:", error);
+      return { success: false, error: error.message };
+    }
 
-    return { success: true, messageId: data.id };
+    console.log("✅ Email sent successfully via Resend:", data?.id || data);
+
+    return { success: true, messageId: data?.id };
   } catch (error) {
     console.error("❌ Resend email error:", error.message);
     console.error("❌ Full error:", error);
@@ -124,7 +130,6 @@ const sendNewLeadNotification = async (leadData) => {
   }
 };
 
-// Test email configuration
 const testEmailConfig = async () => {
   try {
     if (!process.env.RESEND_API_KEY) {
