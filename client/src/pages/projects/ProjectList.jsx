@@ -14,6 +14,7 @@ import { formatCurrency } from "../../utils/formatters";
 import projectService from "../../services/projectService";
 import Modal from "../../components/common/Modal";
 import { getProjectStatCards } from "../../config/statCardConfigs";
+import PageHeader from "../../components/common/PageHeader";
 
 const ProjectList = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const ProjectList = () => {
     sortOrder: "desc",
   });
   const [statsLoading, setStatsLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
@@ -76,6 +77,12 @@ const ProjectList = () => {
     } finally {
       setStatsLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchProjects(), fetchStats()]);
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -126,11 +133,12 @@ const ProjectList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Projects</h1>
-          <p className="text-gray-500 mt-1">Manage your client projects</p>
-        </div>
+      <PageHeader
+        title="Projects"
+        subtitle="Manage your client Projects"
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      >
         <Button variant="neon" onClick={() => navigate("/projects/new")}>
           <svg
             className="w-5 h-5 mr-2"
@@ -147,7 +155,7 @@ const ProjectList = () => {
           </svg>
           New Project
         </Button>
-      </div>
+      </PageHeader>
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 

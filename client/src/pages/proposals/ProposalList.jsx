@@ -12,7 +12,7 @@ import { proposalFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import proposalService from "../../services/proposalService";
 import { getProposalStatCards } from "../../config/statCardConfigs";
-
+import PageHeader from "../../components/common/PageHeader";
 const getStatusConfig = (status) => {
   const config = {
     draft: {
@@ -194,7 +194,7 @@ const ProposalList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const fetchProposals = useCallback(async () => {
     try {
       setLoading(true);
@@ -229,6 +229,12 @@ const ProposalList = () => {
     } finally {
       setStatsLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchProposals(), fetchStats()]);
+    setRefreshing(false);
   };
   useEffect(() => {
     fetchProposals();
@@ -289,11 +295,12 @@ const ProposalList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Proposals</h1>
-          <p className="text-gray-500 mt-1">Manage your client proposals</p>
-        </div>
+      <PageHeader
+        title="Proposals"
+        subtitle="Manage your client proposals"
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      >
         <Button variant="neon" onClick={() => navigate("/proposals/new")}>
           <svg
             className="w-5 h-5 mr-2"
@@ -310,7 +317,7 @@ const ProposalList = () => {
           </svg>
           Create Proposal
         </Button>
-      </div>
+      </PageHeader>
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 

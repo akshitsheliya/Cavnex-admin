@@ -14,7 +14,7 @@ import { invoiceFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency } from "../../utils/formatters";
 import invoiceService from "../../services/invoiceService";
 import { getInvoiceStatCards } from "../../config/statCardConfigs";
-
+import PageHeader from "../../components/common/PageHeader";
 const InvoiceList = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
@@ -42,7 +42,7 @@ const InvoiceList = () => {
     paymentReference: "",
   });
   const [statsLoading, setStatsLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true);
@@ -81,7 +81,11 @@ const InvoiceList = () => {
       setStatsLoading(false);
     }
   };
-
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchInvoices(), fetchStats()]);
+    setRefreshing(false);
+  };
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
@@ -166,13 +170,12 @@ const InvoiceList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Invoices</h1>
-          <p className="text-gray-500 mt-1">
-            Manage your invoices and payments
-          </p>
-        </div>
+      <PageHeader
+        title="Invoices"
+        subtitle="Manage your invoices and payments"
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      >
         <Button variant="neon" onClick={() => navigate("/invoices/new")}>
           <svg
             className="w-5 h-5 mr-2"
@@ -189,7 +192,7 @@ const InvoiceList = () => {
           </svg>
           Create Invoice
         </Button>
-      </div>
+      </PageHeader>
 
       <ErrorAlert message={error} onClose={() => setError("")} />
       <StatCards stats={statCards} loading={statsLoading} columns={5} />

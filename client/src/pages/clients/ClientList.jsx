@@ -14,6 +14,7 @@ import { clientFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency } from "../../utils/formatters";
 import clientService from "../../services/clientService";
 import { getClientStatCards } from "../../config/statCardConfigs";
+import PageHeader from "../../components/common/PageHeader";
 
 const ClientList = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const ClientList = () => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const fetchClients = useCallback(async () => {
     try {
       setLoading(true);
@@ -69,6 +70,11 @@ const ClientList = () => {
     } finally {
       setStatsLoading(false);
     }
+  };
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchClients(), fetchStats()]);
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -119,11 +125,12 @@ const ClientList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Clients</h1>
-          <p className="text-gray-500 mt-1">Manage your client relationships</p>
-        </div>
+      <PageHeader
+        title="Clients"
+        subtitle="Manage your client relationships"
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      >
         <Button variant="neon" onClick={() => navigate("/clients/new")}>
           <svg
             className="w-5 h-5 mr-2"
@@ -140,12 +147,9 @@ const ClientList = () => {
           </svg>
           Add Client
         </Button>
-      </div>
-
+      </PageHeader>
       <ErrorAlert message={error} onClose={() => setError("")} />
-
       <StatCards stats={statCards} loading={statsLoading} columns={4} />
-
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <FilterBar
@@ -203,7 +207,6 @@ const ClientList = () => {
           </button>
         </div>
       </div>
-
       {loading ? (
         <Loader />
       ) : clients.length === 0 ? (
@@ -238,7 +241,6 @@ const ClientList = () => {
           />
         </>
       )}
-
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

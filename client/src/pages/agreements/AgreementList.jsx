@@ -12,7 +12,7 @@ import { agreementFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import agreementService from "../../services/agreementService";
 import { getAgreementStatCards } from "../../config/statCardConfigs";
-
+import PageHeader from "../../components/common/PageHeader";
 const getStatusConfig = (status) => {
   const config = {
     draft: {
@@ -220,7 +220,7 @@ const AgreementList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAgreement, setSelectedAgreement] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const fetchAgreements = useCallback(async () => {
     try {
       setLoading(true);
@@ -257,6 +257,11 @@ const AgreementList = () => {
     } finally {
       setStatsLoading(false);
     }
+  };
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchAgreements(), fetchStats()]);
+    setRefreshing(false);
   };
   useEffect(() => {
     fetchAgreements();
@@ -317,11 +322,12 @@ const AgreementList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Agreements</h1>
-          <p className="text-gray-500 mt-1">Manage your client agreements</p>
-        </div>
+      <PageHeader
+        title="Agreements"
+        subtitle="Manage your client agreements"
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      >
         <Button variant="neon" onClick={() => navigate("/agreements/new")}>
           <svg
             className="w-5 h-5 mr-2"
@@ -338,7 +344,7 @@ const AgreementList = () => {
           </svg>
           Create Agreement
         </Button>
-      </div>
+      </PageHeader>
 
       <ErrorAlert message={error} onClose={() => setError("")} />
       <StatCards stats={statCards} loading={statsLoading} columns={5} />
