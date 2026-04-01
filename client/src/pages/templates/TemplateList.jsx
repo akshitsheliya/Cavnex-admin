@@ -1,4 +1,3 @@
-// src/pages/templates/TemplateList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
@@ -9,6 +8,7 @@ import EmptyState from "../../components/common/EmptyState";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import TemplateCard from "../../components/templates/TemplateCard";
 import { templateFilterConfig } from "../../config/filterConfigs";
+import { getTemplateStatCards } from "../../config/statCardConfigs";
 import templateService from "../../services/templateService";
 import { toast } from "react-hot-toast";
 
@@ -16,6 +16,7 @@ const TemplateList = () => {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
   const [filters, setFilters] = useState({
@@ -26,8 +27,11 @@ const TemplateList = () => {
 
   useEffect(() => {
     fetchTemplates();
-    fetchStats();
   }, [filters]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const fetchTemplates = async () => {
     try {
@@ -50,10 +54,13 @@ const TemplateList = () => {
 
   const fetchStats = async () => {
     try {
+      setStatsLoading(true);
       const response = await templateService.getTemplateStats();
       setStats(response.data);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -99,47 +106,7 @@ const TemplateList = () => {
     }
   };
 
-  const buildStatCards = () => {
-    if (!stats) return [];
-    const cards = [
-      {
-        label: "Total Templates",
-        value: stats.totalTemplates || 0,
-        color: "from-purple-500 to-pink-500",
-        icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-      },
-    ];
-    const typeColors = {
-      invoice: "from-neon-green to-emerald-500",
-      proposal: "from-neon-blue to-cyan-400",
-      agreement: "from-amber-500 to-orange-500",
-      receipt: "from-pink-500 to-rose-500",
-    };
-    const typeIcons = {
-      invoice:
-        "M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z",
-      proposal:
-        "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
-      agreement:
-        "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
-      receipt:
-        "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
-    };
-    if (stats.typeCounts) {
-      Object.entries(stats.typeCounts).forEach(([type, count]) => {
-        cards.push({
-          label: type.charAt(0).toUpperCase() + type.slice(1),
-          value: count,
-          color: typeColors[type] || "from-gray-400 to-gray-500",
-          icon:
-            typeIcons[type] ||
-            "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-        });
-      });
-    }
-    return cards;
-  };
-
+  const statCards = getTemplateStatCards(stats);
   const hasFilters = filters.search || filters.type || filters.category;
 
   return (
@@ -187,7 +154,7 @@ const TemplateList = () => {
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
-      <StatCards stats={buildStatCards()} />
+      <StatCards stats={statCards} loading={statsLoading} />
 
       <FilterBar
         searchPlaceholder="Search templates..."
@@ -201,7 +168,6 @@ const TemplateList = () => {
         <Loader />
       ) : templates.length === 0 ? (
         <EmptyState
-          icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           title="No templates found"
           description={
             hasFilters

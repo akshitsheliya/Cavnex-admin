@@ -11,6 +11,7 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import { proposalFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import proposalService from "../../services/proposalService";
+import { getProposalStatCards } from "../../config/statCardConfigs";
 
 const getStatusConfig = (status) => {
   const config = {
@@ -192,6 +193,7 @@ const ProposalList = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const fetchProposals = useCallback(async () => {
     try {
@@ -217,16 +219,17 @@ const ProposalList = () => {
       setLoading(false);
     }
   }, [pagination.current, filters]);
-
   const fetchStats = async () => {
     try {
+      setStatsLoading(true);
       const response = await proposalService.getProposalStats();
       setStats(response.data);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+    } finally {
+      setStatsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchProposals();
   }, [fetchProposals]);
@@ -280,40 +283,7 @@ const ProposalList = () => {
     setShowDeleteModal(true);
   };
 
-  const statCards = stats
-    ? [
-        {
-          label: "Total",
-          value: stats.totalProposals || 0,
-          color: "from-purple-500 to-pink-500",
-          icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
-        },
-        {
-          label: "Drafts",
-          value: stats.statusCounts?.draft || 0,
-          color: "from-gray-400 to-gray-500",
-          icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
-        },
-        {
-          label: "Sent",
-          value: stats.statusCounts?.sent || 0,
-          color: "from-neon-blue to-cyan-400",
-          icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-        },
-        {
-          label: "Accepted",
-          value: stats.statusCounts?.accepted || 0,
-          color: "from-neon-green to-emerald-500",
-          icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-        {
-          label: "Total Value",
-          value: formatCurrency(stats.totalAcceptedValue),
-          color: "from-amber-500 to-orange-500",
-          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-      ]
-    : [];
+  const statCards = getProposalStatCards(stats);
 
   const hasFilters = filters.search || filters.status;
 
@@ -344,7 +314,7 @@ const ProposalList = () => {
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
-      <StatCards stats={statCards} />
+      <StatCards stats={statCards} loading={statsLoading} columns={5} />
 
       <FilterBar
         searchPlaceholder="Search proposals..."

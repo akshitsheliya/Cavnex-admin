@@ -379,37 +379,45 @@ const getClientProposals = async (req, res, next) => {
 
 const getClientStats = async (req, res, next) => {
   try {
-    const orgId = req.organizationId;
-    const userId = req.user._id;
-    const matchQuery = getAggregateMatch(req); // ✅ UPDATED
+    const matchQuery = buildOrgQuery(req);
 
     const [
+      totalClients,
+      activeClients,
+      inactiveClients,
+      onHoldClients,
+      recentClients,
       statusCounts,
       industryCounts,
-      totalClients,
-      recentClients,
-      totalRevenue,
+      revenueTotal,
     ] = await Promise.all([
-      Client.getStatusCounts(orgId, userId),
-      Client.getIndustryCounts(orgId, userId),
-      Client.countDocuments(buildOrgQuery(req)),
-      Client.find(buildOrgQuery(req)).sort({ createdAt: -1 }).limit(5).lean(),
+      Client.countDocuments(matchQuery),
+      Client.countDocuments({ ...matchQuery, status: "active" }),
+      Client.countDocuments({ ...matchQuery, status: "inactive" }),
+      Client.countDocuments({ ...matchQuery, status: "on_hold" }),
+      Client.find(matchQuery).sort({ createdAt: -1 }).limit(5).lean(),
+      Client.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+      Client.aggregate([
+        { $match: matchQuery },
+        { $match: { industry: { $exists: true, $ne: "", $ne: null } } },
+        { $group: { _id: "$industry", count: { $sum: 1 } } },
+      ]),
       Client.aggregate([
         { $match: matchQuery },
         { $group: { _id: null, total: { $sum: "$totalRevenue" } } },
       ]),
     ]);
 
-    const activeClients = await Client.countDocuments({
-      ...buildOrgQuery(req),
-      status: "active",
-    });
-
     res.status(200).json({
       success: true,
       data: {
         totalClients,
         activeClients,
+        inactiveClients,
+        onHoldClients,
         statusCounts: statusCounts.reduce((acc, item) => {
           acc[item._id] = item.count;
           return acc;
@@ -418,7 +426,7 @@ const getClientStats = async (req, res, next) => {
           acc[item._id] = item.count;
           return acc;
         }, {}),
-        totalRevenue: totalRevenue[0]?.total || 0,
+        totalRevenue: revenueTotal[0]?.total || 0,
         recentClients,
       },
     });

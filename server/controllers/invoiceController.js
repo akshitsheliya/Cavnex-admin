@@ -439,54 +439,115 @@ const duplicateInvoice = async (req, res, next) => {
   }
 };
 
-// Get invoice stats
 const getInvoiceStats = async (req, res, next) => {
   try {
-    // ✅ UPDATED: Use organization-based stats
-    const orgId = req.organizationId;
-    const userId = req.user._id;
+    const matchQuery = buildOrgQuery(req);
 
-    const stats = await Invoice.getStats(orgId, userId);
-
-    const recentInvoices = await Invoice.find(buildOrgQuery(req))
-      .populate("client", "businessName clientName")
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean();
-
-    // Monthly revenue (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const matchQuery = getAggregateMatch(req);
-
-    const monthlyRevenue = await Invoice.aggregate([
-      {
-        $match: {
-          ...matchQuery,
-          status: "paid",
-          paidAt: { $gte: sixMonthsAgo },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$paidAt" },
-            month: { $month: "$paidAt" },
+    const [
+      totalInvoices,
+      paidInvoices,
+      pendingInvoices,
+      overdueInvoices,
+      revenueAgg,
+      monthlyRevenue,
+      statusCounts,
+    ] = await Promise.all([
+      Invoice.countDocuments(matchQuery),
+      Invoice.countDocuments({ ...matchQuery, status: "paid" }),
+      Invoice.countDocuments({
+        ...matchQuery,
+        status: { $in: ["pending", "sent"] },
+      }),
+      Invoice.countDocuments({
+        ...matchQuery,
+        status: { $in: ["pending", "sent"] },
+        dueDate: { $lt: new Date() },
+      }),
+      Invoice.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$total" },
+            paidAmount: {
+              $sum: { $cond: [{ $eq: ["$status", "paid"] }, "$total", 0] },
+            },
+            pendingAmount: {
+              $sum: {
+                $cond: [{ $in: ["$status", ["pending", "sent"]] }, "$total", 0],
+              },
+            },
           },
-          total: { $sum: "$total" },
-          count: { $sum: 1 },
         },
-      },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+      Invoice.aggregate([
+        {
+          $match: { ...matchQuery, status: "paid", paidAt: { $exists: true } },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$paidAt" },
+              month: { $month: "$paidAt" },
+            },
+            total: { $sum: "$total" },
+            invoiceCount: { $sum: 1 },
+            projectCount: { $addToSet: "$project" },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            total: 1,
+            invoiceCount: 1,
+            projectCount: { $size: "$projectCount" },
+          },
+        },
+        { $sort: { "_id.year": -1, "_id.month": -1 } },
+        { $limit: 12 },
+      ]),
+      Invoice.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
     ]);
+
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const formattedMonthly = monthlyRevenue.map((item) => ({
+      month: `${monthNames[item._id.month - 1]} ${item._id.year}`,
+      total: item.total,
+      invoiceCount: item.invoiceCount,
+      projectCount: item.projectCount,
+    }));
 
     res.status(200).json({
       success: true,
       data: {
-        ...stats,
-        recentInvoices,
-        monthlyRevenue,
+        totalInvoices,
+        paidInvoices,
+        pendingInvoices,
+        overdueInvoices,
+        totalRevenue: revenueAgg[0]?.totalRevenue || 0,
+        paidAmount: revenueAgg[0]?.paidAmount || 0,
+        pendingAmount: revenueAgg[0]?.pendingAmount || 0,
+        statusCounts: statusCounts.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}),
+        monthlyRevenue: formattedMonthly,
       },
     });
   } catch (error) {

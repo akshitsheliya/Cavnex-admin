@@ -12,6 +12,8 @@ import ProjectCard from "../../components/projects/ProjectCard";
 import { projectFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency } from "../../utils/formatters";
 import projectService from "../../services/projectService";
+import Modal from "../../components/common/Modal";
+import { getProjectStatCards } from "../../config/statCardConfigs";
 
 const ProjectList = () => {
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ const ProjectList = () => {
     sortBy: "createdAt",
     sortOrder: "desc",
   });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -65,10 +68,13 @@ const ProjectList = () => {
 
   const fetchStats = async () => {
     try {
+      setStatsLoading(true);
       const response = await projectService.getProjectStats();
       setStats(response.data);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -113,34 +119,7 @@ const ProjectList = () => {
     }
   };
 
-  const statCards = stats
-    ? [
-        {
-          label: "Total Projects",
-          value: stats.totalProjects || 0,
-          color: "from-purple-500 to-pink-500",
-          icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z",
-        },
-        {
-          label: "Active",
-          value: stats.activeProjects || 0,
-          color: "from-neon-blue to-cyan-400",
-          icon: "M13 10V3L4 14h7v7l9-11h-7z",
-        },
-        {
-          label: "Overdue",
-          value: stats.overdueProjects || 0,
-          color: "from-red-500 to-rose-500",
-          icon: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-        {
-          label: "Total Revenue",
-          value: formatCurrency(stats.totalPaid || 0),
-          color: "from-green-400 to-emerald-500",
-          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-      ]
-    : [];
+  const statCards = getProjectStatCards(stats);
 
   const hasFilters =
     filters.search || filters.status || filters.projectType || filters.priority;
@@ -172,7 +151,7 @@ const ProjectList = () => {
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
-      <StatCards stats={statCards} />
+      <StatCards stats={statCards} loading={statsLoading} columns={4} />
 
       <FilterBar
         searchPlaceholder="Search projects..."

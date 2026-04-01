@@ -1,16 +1,14 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import ScrollToTop from "./components/common/ScrollToTop";
 
-// Layouts
 import MainLayout from "./layouts/MainLayout";
 import AuthLayout from "./layouts/AuthLayout";
 
-// Auth Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
-// Pages
 import Dashboard from "./pages/dashboard/Dashboard";
 import LeadList from "./pages/leads/LeadList";
 import LeadForm from "./pages/leads/LeadForm";
@@ -36,7 +34,6 @@ import TemplateView from "./pages/templates/TemplateView";
 import PricingCalculator from "./pages/pricing/PricingCalculator";
 import Settings from "./pages/settings/Settings";
 
-// 404 Component
 const NotFound = () => (
   <div className="min-h-screen bg-black flex items-center justify-center p-6">
     <div className="text-center">
@@ -58,14 +55,12 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
-          {/* Auth Routes */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/register" element={<Register />} /> */}
           </Route>
 
-          {/* Protected Routes */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />

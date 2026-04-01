@@ -13,6 +13,7 @@ import ClientCard from "../../components/clients/ClientCard";
 import { clientFilterConfig } from "../../config/filterConfigs";
 import { formatCurrency } from "../../utils/formatters";
 import clientService from "../../services/clientService";
+import { getClientStatCards } from "../../config/statCardConfigs";
 
 const ClientList = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const ClientList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -59,10 +61,13 @@ const ClientList = () => {
 
   const fetchStats = async () => {
     try {
+      setStatsLoading(true);
       const response = await clientService.getClientStats();
       setStats(response.data);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -108,34 +113,7 @@ const ClientList = () => {
     setPagination((prev) => ({ ...prev, current: newPage }));
   };
 
-  const statCards = stats
-    ? [
-        {
-          label: "Total Clients",
-          value: stats.totalClients || 0,
-          color: "from-purple-500 to-pink-500",
-          icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
-        },
-        {
-          label: "Active Clients",
-          value: stats.activeClients || 0,
-          color: "from-neon-green to-neon-blue",
-          icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-        {
-          label: "Total Revenue",
-          value: formatCurrency(stats.totalRevenue || 0),
-          color: "from-green-400 to-emerald-500",
-          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-        {
-          label: "On Hold",
-          value: stats.statusCounts?.on_hold || 0,
-          color: "from-amber-500 to-orange-500",
-          icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-        },
-      ]
-    : [];
+  const statCards = getClientStatCards(stats);
 
   const hasFilters = filters.search || filters.status || filters.industry;
 
@@ -166,7 +144,7 @@ const ClientList = () => {
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
-      <StatCards stats={statCards} />
+      <StatCards stats={statCards} loading={statsLoading} columns={4} />
 
       <div className="flex items-start gap-4">
         <div className="flex-1">

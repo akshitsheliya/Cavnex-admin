@@ -1,7 +1,7 @@
 import React from "react";
 import Card from "../common/Card";
 
-const RecentActivity = ({ activities = [] }) => {
+const RecentActivity = ({ activities = [], onActivityClick, onViewAll }) => {
   const defaultActivities = [
     {
       id: 1,
@@ -53,54 +53,100 @@ const RecentActivity = ({ activities = [] }) => {
   const displayActivities =
     activities.length > 0 ? activities : defaultActivities;
 
+  const handleClick = (activity) => {
+    if (onActivityClick) {
+      onActivityClick(activity);
+    }
+  };
+
   return (
     <Card
       title="Recent Activity"
       subtitle="Latest updates from your agency"
       actions={
-        <button className="text-sm text-neon-green hover:text-neon-blue transition-colors">
-          View All
-        </button>
+        onViewAll && (
+          <button
+            onClick={onViewAll}
+            className="text-sm text-neon-green hover:text-neon-blue transition-colors"
+          >
+            View All
+          </button>
+        )
       }
     >
       <div className="space-y-4">
-        {displayActivities.map((activity, index) => (
-          <div
-            key={activity.id || index}
-            className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 transition-all duration-200 cursor-pointer group"
-          >
-            <div
-              className={`p-2.5 rounded-xl bg-gradient-to-br ${activity.color} shadow-lg flex-shrink-0`}
+        {displayActivities.length === 0 ? (
+          <div className="text-center py-8">
+            <svg
+              className="w-12 h-12 mx-auto text-gray-600 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.5"
-                  d={activity.icon}
-                />
-              </svg>
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
-                {activity.title}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5 truncate">
-                {activity.description}
-              </p>
-            </div>
-
-            <span className="text-xs text-gray-500 flex-shrink-0">
-              {activity.time}
-            </span>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p className="text-gray-500">No recent activity</p>
           </div>
-        ))}
+        ) : (
+          displayActivities.map((activity, index) => (
+            <div
+              key={activity.id || index}
+              onClick={() => handleClick(activity)}
+              className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
+            >
+              <div
+                className={`p-2.5 rounded-xl bg-gradient-to-br ${activity.color} shadow-lg flex-shrink-0`}
+              >
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d={activity.icon}
+                  />
+                </svg>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
+                  {activity.title}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5 truncate">
+                  {activity.description}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-xs text-gray-500 flex-shrink-0">
+                  {activity.time}
+                </span>
+                <svg
+                  className="w-4 h-4 text-gray-600 group-hover:text-neon-green transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </Card>
   );

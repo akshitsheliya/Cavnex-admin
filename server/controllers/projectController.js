@@ -513,56 +513,51 @@ const addMilestone = async (req, res, next) => {
 
 const getProjectStats = async (req, res, next) => {
   try {
-    // ✅ UPDATED: Use organization-based stats
-    const orgId = req.organizationId;
-    const userId = req.user._id;
-    const matchQuery = getAggregateMatch(req);
+    const matchQuery = buildOrgQuery(req);
 
     const [
-      statusCounts,
-      typeCounts,
-      revenueStats,
       totalProjects,
+      activeProjects,
+      completedProjects,
+      onHoldProjects,
       recentProjects,
+      statusCounts,
+      revenueTotal,
     ] = await Promise.all([
-      Project.getStatusCounts(orgId, userId),
-      Project.getTypeCounts(orgId, userId),
-      Project.getRevenueStats(orgId, userId),
-      Project.countDocuments(buildOrgQuery(req)),
-      Project.find(buildOrgQuery(req))
-        .populate("client", "businessName")
+      Project.countDocuments(matchQuery),
+      Project.countDocuments({
+        ...matchQuery,
+        status: { $in: ["in_progress", "planning", "review"] },
+      }),
+      Project.countDocuments({ ...matchQuery, status: "completed" }),
+      Project.countDocuments({ ...matchQuery, status: "on_hold" }),
+      Project.find(matchQuery)
         .sort({ createdAt: -1 })
         .limit(5)
+        .populate("client", "clientName")
         .lean(),
+      Project.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+      Project.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: null, total: { $sum: "$budget" } } },
+      ]),
     ]);
-
-    const activeProjects = await Project.countDocuments({
-      ...buildOrgQuery(req),
-      status: { $nin: ["completed", "cancelled"] },
-    });
-
-    const overdueProjects = await Project.countDocuments({
-      ...buildOrgQuery(req),
-      deadline: { $lt: new Date() },
-      status: { $nin: ["completed", "cancelled"] },
-    });
 
     res.status(200).json({
       success: true,
       data: {
         totalProjects,
         activeProjects,
-        overdueProjects,
+        completedProjects,
+        onHoldProjects,
         statusCounts: statusCounts.reduce((acc, item) => {
           acc[item._id] = item.count;
           return acc;
         }, {}),
-        typeCounts: typeCounts.reduce((acc, item) => {
-          acc[item._id] = item.count;
-          return acc;
-        }, {}),
-        totalBudget: revenueStats[0]?.totalBudget || 0,
-        totalPaid: revenueStats[0]?.totalPaid || 0,
+        totalBudget: revenueTotal[0]?.total || 0,
         recentProjects,
       },
     });

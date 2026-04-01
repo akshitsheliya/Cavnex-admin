@@ -494,8 +494,6 @@ const getLeadStats = async (req, res, next) => {
           ],
         };
 
-    console.log("📊 Stats Query:", JSON.stringify(matchQuery, null, 2));
-
     const [statusCounts, sourceCounts, totalLeads, recentLeads] =
       await Promise.all([
         Lead.aggregate([
@@ -523,8 +521,6 @@ const getLeadStats = async (req, res, next) => {
     const conversionRate =
       totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(2) : 0;
 
-    console.log(`✅ Stats: ${totalLeads} total leads`);
-
     res.status(200).json({
       success: true,
       data: {
@@ -543,11 +539,9 @@ const getLeadStats = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ getLeadStats error:", error);
     next(error);
   }
 };
-
 module.exports = {
   getLeads,
   getLead,
