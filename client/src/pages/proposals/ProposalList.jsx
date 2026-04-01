@@ -335,7 +335,6 @@ const ProposalList = () => {
         <Loader />
       ) : proposals.length === 0 ? (
         <EmptyState
-          icon="📋"
           title="No proposals found"
           description={
             hasFilters

@@ -209,7 +209,7 @@ const InvoiceList = () => {
         <Loader />
       ) : invoices.length === 0 ? (
         <EmptyState
-          icon="📄"
+
           title="No invoices found"
           description="Create your first invoice to get started"
           actionLabel="Create Invoice"
