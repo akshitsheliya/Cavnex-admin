@@ -9,6 +9,65 @@ import leadService from "../../services/leadService";
 import useFormValidation from "../../hooks/useFormValidation";
 import { leadSchema } from "../../validations";
 
+/* ─── Reusable styled select ─────────────────────────────────────────────── */
+const StyledSelect = ({ label, name, value, onChange, options, required }) => (
+  <div className="mb-5">
+    {label && (
+      <label
+        htmlFor={name}
+        className="block text-sm font-medium text-gray-300 mb-2"
+      >
+        {label}
+        {required && <span className="text-neon-green ml-1">*</span>}
+      </label>
+    )}
+    <select
+      id={name}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white
+                 focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.07]
+                 focus:shadow-[0_0_20px_rgba(0,255,136,0.15)]
+                 transition-all duration-300 appearance-none cursor-pointer"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
+/* ─── Reusable styled textarea ──────────────────────────────────────────── */
+const StyledTextarea = ({ label, name, value, onChange, placeholder, rows = 4 }) => (
+  <div className="mb-5">
+    {label && (
+      <label
+        htmlFor={name}
+        className="block text-sm font-medium text-gray-300 mb-2"
+      >
+        {label}
+      </label>
+    )}
+    <textarea
+      id={name}
+      name={name}
+      value={value}
+      onChange={onChange}
+      rows={rows}
+      placeholder={placeholder}
+      className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl
+                 text-white placeholder-gray-500
+                 focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.07]
+                 focus:shadow-[0_0_20px_rgba(0,255,136,0.15)]
+                 transition-all duration-300 resize-none"
+    />
+  </div>
+);
+
+/* ─── Main component ─────────────────────────────────────────────────────── */
 const LeadForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -130,14 +189,15 @@ const LeadForm = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-0 sm:px-0">
+      {/* Back navigation & heading */}
       <div className="mb-6">
         <button
           onClick={() => navigate("/leads")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4 group"
         >
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -149,22 +209,23 @@ const LeadForm = () => {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          Back to Leads
+          <span className="text-sm">Back to Leads</span>
         </button>
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">
           {isEditMode ? "Edit Lead" : "Add New Lead"}
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-gray-400 mt-1 text-sm sm:text-base">
           {isEditMode
             ? "Update lead information"
             : "Fill in the lead details below"}
         </p>
       </div>
 
+      {/* Error Alert */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3">
           <svg
-            className="w-5 h-5 text-red-400 flex-shrink-0"
+            className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -174,13 +235,14 @@ const LeadForm = () => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400 text-sm leading-relaxed">{error}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} noValidate>
-        <Card title="Contact Information" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Contact Information Card */}
+        <Card title="Contact Information" className="mb-5 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
             <Input
               label="Lead Name"
               name="leadName"
@@ -235,42 +297,24 @@ const LeadForm = () => {
           </div>
         </Card>
 
-        <Card title="Lead Details" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Lead Source <span className="text-neon-green">*</span>
-              </label>
-              <select
-                name="source"
-                value={formData.source}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-              >
-                {sourceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Lead Details Card */}
+        <Card title="Lead Details" className="mb-5 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
+            <StyledSelect
+              label="Lead Source"
+              name="source"
+              value={formData.source}
+              onChange={handleChange}
+              options={sourceOptions}
+              required
+            />
+            <StyledSelect
+              label="Status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              options={statusOptions}
+            />
             <Input
               label="Estimated Value (₹)"
               name="estimatedValue"
@@ -290,26 +334,23 @@ const LeadForm = () => {
             />
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Add any additional notes about this lead..."
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50 resize-none"
-            />
-          </div>
+          <StyledTextarea
+            label="Notes"
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            placeholder="Add any additional notes about this lead..."
+            rows={4}
+          />
         </Card>
 
-        <div className="flex items-center justify-end gap-4">
+        {/* Action Buttons */}
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
           <Button
             type="button"
             variant="ghost"
             onClick={() => navigate("/leads")}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -318,6 +359,7 @@ const LeadForm = () => {
             variant="neon"
             loading={submitting}
             disabled={isSubmitDisabled(submitting)}
+            className="w-full sm:w-auto"
           >
             {isEditMode ? "Update Lead" : "Create Lead"}
           </Button>

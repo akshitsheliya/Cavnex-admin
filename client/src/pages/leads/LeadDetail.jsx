@@ -7,6 +7,21 @@ import Modal from "../../components/common/Modal";
 import LeadStatusBadge from "../../components/leads/LeadStatusBadge";
 import leadService from "../../services/leadService";
 
+/* ─── Small helper: labelled info row ───────────────────────────────────── */
+const InfoField = ({ label, children }) => (
+  <div className="min-w-0">
+    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1 truncate">
+      {label}
+    </p>
+    <div className="text-white text-sm sm:text-base break-words">{children}</div>
+  </div>
+);
+
+/* ─── Quick-action link / button shared styles ───────────────────────────── */
+const quickActionBase =
+  "flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-200 w-full text-left";
+
+/* ─── Main component ─────────────────────────────────────────────────────── */
 const LeadDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -69,30 +84,26 @@ const LeadDetail = () => {
     }
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-IN", {
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString("en-IN", {
       day: "numeric",
       month: "long",
       year: "numeric",
     });
-  };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
-  };
 
-  if (loading) {
-    return <Loader />;
-  }
+  if (loading) return <Loader />;
 
   if (error && !lead) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-400 mb-4">{error}</p>
+      <div className="text-center py-12 px-4">
+        <p className="text-red-400 mb-4 text-sm sm:text-base">{error}</p>
         <Button variant="outline" onClick={() => navigate("/leads")}>
           Back to Leads
         </Button>
@@ -102,7 +113,7 @@ const LeadDetail = () => {
 
   if (!lead) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 px-4">
         <p className="text-gray-400 mb-4">Lead not found</p>
         <Button variant="outline" onClick={() => navigate("/leads")}>
           Back to Leads
@@ -122,33 +133,33 @@ const LeadDetail = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <button
-          onClick={() => navigate("/leads")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4"
+    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6">
+      {/* Back button */}
+      <button
+        onClick={() => navigate("/leads")}
+        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+      >
+        <svg
+          className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform flex-shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          Back to Leads
-        </button>
-      </div>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+        <span className="text-sm">Back to Leads</span>
+      </button>
 
+      {/* Error Banner */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3">
           <svg
-            className="w-5 h-5 text-red-400"
+            className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -158,27 +169,31 @@ const LeadDetail = () => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400 text-sm leading-relaxed">{error}</p>
         </div>
       )}
 
-      <div className="glass-card p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-              <span className="text-2xl font-bold text-white">
+      {/* ── Hero Card ─────────────────────────────────────────────────────── */}
+      <div className="glass-card p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          {/* Avatar + name */}
+          <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+              <span className="text-xl sm:text-2xl font-bold text-white">
                 {lead.leadName?.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">{lead.leadName}</h1>
-              <p className="text-gray-400">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
+                {lead.leadName}
+              </h1>
+              <p className="text-gray-400 text-sm truncate">
                 {lead.businessName || "No business name"}
               </p>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <LeadStatusBadge status={lead.status} size="lg" />
                 {lead.convertedToClient && (
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-neon-blue/20 text-neon-blue border border-neon-blue/30">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-neon-blue/20 text-neon-blue border border-neon-blue/30 whitespace-nowrap">
                     Converted
                   </span>
                 )}
@@ -186,13 +201,16 @@ const LeadDetail = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3 sm:flex-shrink-0">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => navigate(`/leads/${id}/edit`)}
+              className="flex-1 sm:flex-none"
             >
               <svg
-                className="w-4 h-4 mr-2"
+                className="w-4 h-4 mr-1.5 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -204,12 +222,18 @@ const LeadDetail = () => {
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                 />
               </svg>
-              Edit
+              <span className="whitespace-nowrap">Edit</span>
             </Button>
+
             {!lead.convertedToClient && lead.status !== "closed_won" && (
-              <Button variant="neon" onClick={() => setShowConvertModal(true)}>
+              <Button
+                variant="neon"
+                size="sm"
+                onClick={() => setShowConvertModal(true)}
+                className="flex-1 sm:flex-none"
+              >
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 mr-1.5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -221,12 +245,18 @@ const LeadDetail = () => {
                     d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
                   />
                 </svg>
-                Convert to Client
+                <span className="whitespace-nowrap">Convert</span>
               </Button>
             )}
-            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setShowDeleteModal(true)}
+              className="flex-1 sm:flex-none"
+            >
               <svg
-                className="w-4 h-4 mr-2"
+                className="w-4 h-4 mr-1.5 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -238,105 +268,87 @@ const LeadDetail = () => {
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
-              Delete
+              <span className="whitespace-nowrap">Delete</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      {/* ── Body Grid ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+
+        {/* Left column: info cards */}
+        <div className="lg:col-span-2 space-y-5 sm:space-y-6">
+
+          {/* Contact Information */}
           <Card title="Contact Information">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Email
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+              <InfoField label="Email">
                 <a
                   href={`mailto:${lead.email}`}
-                  className="text-white hover:text-neon-green transition-colors"
+                  className="text-white hover:text-neon-green transition-colors break-all"
                 >
                   {lead.email}
                 </a>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Phone
-                </p>
+              </InfoField>
+
+              <InfoField label="Phone">
                 <a
                   href={`tel:${lead.phone}`}
                   className="text-white hover:text-neon-green transition-colors"
                 >
                   {lead.phone}
                 </a>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  City
-                </p>
-                <p className="text-white">{lead.city || "Not specified"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Business Type
-                </p>
-                <p className="text-white">
-                  {lead.businessType || "Not specified"}
-                </p>
-              </div>
+              </InfoField>
+
+              <InfoField label="City">
+                <span>{lead.city || "Not specified"}</span>
+              </InfoField>
+
+              <InfoField label="Business Type">
+                <span>{lead.businessType || "Not specified"}</span>
+              </InfoField>
             </div>
           </Card>
 
+          {/* Lead Details */}
           <Card title="Lead Details">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Source
-                </p>
-                <p className="text-white capitalize">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+              <InfoField label="Source">
+                <span className="capitalize">
                   {lead.source?.replace("_", " ")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Estimated Value
-                </p>
-                <p className="text-neon-green font-semibold">
+                </span>
+              </InfoField>
+
+              <InfoField label="Estimated Value">
+                <span className="text-neon-green font-semibold">
                   {lead.estimatedValue > 0
                     ? formatCurrency(lead.estimatedValue)
                     : "Not specified"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Created
-                </p>
-                <p className="text-white">{formatDate(lead.createdAt)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Follow-up Date
-                </p>
-                <p className="text-white">
-                  {lead.followUpDate
-                    ? formatDate(lead.followUpDate)
-                    : "Not set"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Last Updated
-                </p>
-                <p className="text-white">{formatDate(lead.updatedAt)}</p>
-              </div>
+                </span>
+              </InfoField>
+
+              <InfoField label="Created">
+                <span>{formatDate(lead.createdAt)}</span>
+              </InfoField>
+
+              <InfoField label="Follow-up Date">
+                <span>
+                  {lead.followUpDate ? formatDate(lead.followUpDate) : "Not set"}
+                </span>
+              </InfoField>
+
+              <InfoField label="Last Updated">
+                <span>{formatDate(lead.updatedAt)}</span>
+              </InfoField>
             </div>
 
             {lead.notes && (
-              <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-white/10">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
                   Notes
                 </p>
-                <p className="text-gray-300 whitespace-pre-wrap">
+                <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {lead.notes}
                 </p>
               </div>
@@ -344,7 +356,10 @@ const LeadDetail = () => {
           </Card>
         </div>
 
-        <div className="space-y-6">
+        {/* Right column: status + quick actions */}
+        <div className="space-y-5 sm:space-y-6">
+
+          {/* Update Status */}
           <Card title="Update Status">
             <div className="space-y-2">
               {statusOptions.map((option) => (
@@ -352,17 +367,19 @@ const LeadDetail = () => {
                   key={option.value}
                   onClick={() => handleStatusChange(option.value)}
                   disabled={lead.convertedToClient}
-                  className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
+                  className={`w-full p-3 rounded-xl text-left transition-all duration-200 text-sm ${
                     lead.status === option.value
                       ? "bg-neon-green/10 border border-neon-green/30 text-neon-green"
                       : "bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white"
-                  } ${lead.convertedToClient ? "opacity-50 cursor-not-allowed" : ""}`}
+                  } ${
+                    lead.convertedToClient ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{option.label}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{option.label}</span>
                     {lead.status === option.value && (
                       <svg
-                        className="w-5 h-5"
+                        className="w-4 h-4 flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -379,14 +396,12 @@ const LeadDetail = () => {
             </div>
           </Card>
 
+          {/* Quick Actions */}
           <Card title="Quick Actions">
-            <div className="space-y-3">
-              <a
-                href={`mailto:${lead.email}`}
-                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
-              >
+            <div className="space-y-2.5">
+              <a href={`mailto:${lead.email}`} className={quickActionBase}>
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -398,14 +413,12 @@ const LeadDetail = () => {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                Send Email
+                <span className="text-sm truncate">Send Email</span>
               </a>
-              <a
-                href={`tel:${lead.phone}`}
-                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
-              >
+
+              <a href={`tel:${lead.phone}`} className={quickActionBase}>
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -417,33 +430,35 @@ const LeadDetail = () => {
                     d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                   />
                 </svg>
-                Call Now
+                <span className="text-sm truncate">Call Now</span>
               </a>
+
               <a
                 href={`https://wa.me/91${lead.phone}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                className={quickActionBase}
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                 </svg>
-                WhatsApp
+                <span className="text-sm truncate">WhatsApp</span>
               </a>
+
               <button
                 onClick={() =>
                   navigate("/proposals/new", {
                     state: { leadId: lead._id, leadName: lead.leadName },
                   })
                 }
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                className={quickActionBase}
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -455,59 +470,71 @@ const LeadDetail = () => {
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                Create Proposal
+                <span className="text-sm truncate">Create Proposal</span>
               </button>
             </div>
           </Card>
         </div>
       </div>
 
+      {/* ── Delete Modal ──────────────────────────────────────────────────── */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Delete Lead"
       >
-        <p className="text-gray-300 mb-6">
+        <p className="text-gray-300 mb-6 leading-relaxed text-sm sm:text-base">
           Are you sure you want to delete{" "}
           <span className="text-white font-medium">{lead.leadName}</span>? This
           action cannot be undone.
         </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => setShowDeleteModal(false)}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             variant="danger"
             onClick={handleDelete}
             loading={actionLoading}
+            className="w-full sm:w-auto"
           >
             Delete Lead
           </Button>
         </div>
       </Modal>
 
+      {/* ── Convert Modal ─────────────────────────────────────────────────── */}
       <Modal
         isOpen={showConvertModal}
         onClose={() => setShowConvertModal(false)}
         title="Convert to Client"
       >
-        <p className="text-gray-300 mb-4">
+        <p className="text-gray-300 mb-3 leading-relaxed text-sm sm:text-base">
           Are you sure you want to convert{" "}
           <span className="text-white font-medium">{lead.leadName}</span> to a
           client?
         </p>
-        <p className="text-gray-400 text-sm mb-6">
+        <p className="text-gray-400 text-sm mb-6 leading-relaxed">
           This will create a new client record with the lead's information and
           mark this lead as "Won".
         </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setShowConvertModal(false)}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => setShowConvertModal(false)}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             variant="neon"
             onClick={handleConvert}
             loading={actionLoading}
+            className="w-full sm:w-auto"
           >
             Convert to Client
           </Button>

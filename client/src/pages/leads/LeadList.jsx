@@ -70,6 +70,7 @@ const LeadList = () => {
       setStatsLoading(false);
     }
   };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([fetchLeads(), fetchStats()]);
@@ -142,7 +143,8 @@ const LeadList = () => {
   const hasFilters = filters.search || filters.status || filters.source;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
+      {/* Page Header */}
       <PageHeader
         title="Leads"
         subtitle="Manage your sales leads"
@@ -151,7 +153,7 @@ const LeadList = () => {
       >
         <Button variant="neon" onClick={() => navigate("/leads/new")}>
           <svg
-            className="w-5 h-5 mr-2"
+            className="w-4 h-4 mr-1.5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -163,14 +165,16 @@ const LeadList = () => {
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Add Lead
+          <span className="whitespace-nowrap">Add Lead</span>
         </Button>
       </PageHeader>
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
+      {/* Stat Cards */}
       <StatCards stats={statCards} loading={statsLoading} columns={4} />
 
+      {/* Filter Bar */}
       <FilterBar
         searchPlaceholder="Search leads..."
         filters={filters}
@@ -179,6 +183,7 @@ const LeadList = () => {
         filterConfig={leadFilterConfig}
       />
 
+      {/* Lead Grid / Empty State */}
       {loading ? (
         <Loader />
       ) : leads.length === 0 ? (
@@ -195,7 +200,7 @@ const LeadList = () => {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
             {leads.map((lead) => (
               <LeadCard
                 key={lead._id}
@@ -212,110 +217,129 @@ const LeadList = () => {
           />
         </>
       )}
+
+      {/* Analytics Section */}
       {stats && (
-        <div className="glass-card p-6 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
+        <div className="glass-card p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-4">
             Lead Analytics
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
+              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
                 Total Leads
               </p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-white mt-1">
                 {stats.totalLeads}
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-neon-green/10 border border-neon-green/30">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">
+            <div className="p-3 sm:p-4 rounded-xl bg-neon-green/10 border border-neon-green/30">
+              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
                 Qualified
               </p>
-              <p className="text-2xl font-bold text-neon-green mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-neon-green mt-1">
                 {stats.statusCounts?.contacted || 0}
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">
+            <div className="p-3 sm:p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
                 Conversion Rate
               </p>
-              <p className="text-2xl font-bold text-amber-400 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-amber-400 mt-1">
                 {stats.conversionRate}%
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">
+            <div className="p-3 sm:p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
                 Total Value
               </p>
-              <p className="text-2xl font-bold text-green-400 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-green-400 mt-1 truncate">
                 {formatCurrency(stats.totalValue)}
               </p>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h4 className="text-sm font-semibold text-white mb-3">
-              Leads by Platform
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(stats.sourceCounts || {}).map(
-                ([source, count]) => (
-                  <div
-                    key={source}
-                    className="p-3 rounded-lg bg-white/5 border border-white/10 text-center"
-                  >
-                    <p className="text-xs text-gray-400 capitalize">
-                      {source.replace("_", " ")}
-                    </p>
-                    <p className="text-lg font-bold text-white mt-1">{count}</p>
-                  </div>
-                )
-              )}
+          {Object.keys(stats.sourceCounts || {}).length > 0 && (
+            <div className="mt-5 sm:mt-6">
+              <h4 className="text-sm font-semibold text-white mb-3">
+                Leads by Platform
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                {Object.entries(stats.sourceCounts || {}).map(
+                  ([source, count]) => (
+                    <div
+                      key={source}
+                      className="p-2.5 sm:p-3 rounded-lg bg-white/5 border border-white/10 text-center"
+                    >
+                      <p className="text-xs text-gray-400 capitalize truncate">
+                        {source.replace("_", " ")}
+                      </p>
+                      <p className="text-base sm:text-lg font-bold text-white mt-1">
+                        {count}
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Delete Lead"
       >
-        <p className="text-gray-300 mb-6">
+        <p className="text-gray-300 mb-6 leading-relaxed">
           Are you sure you want to delete this lead? This action cannot be
           undone.
         </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => setShowDeleteModal(false)}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             variant="danger"
             onClick={handleDelete}
             loading={actionLoading}
+            className="w-full sm:w-auto"
           >
             Delete Lead
           </Button>
         </div>
       </Modal>
 
+      {/* Convert to Client Modal */}
       <Modal
         isOpen={showConvertModal}
         onClose={() => setShowConvertModal(false)}
         title="Convert to Client"
       >
-        <p className="text-gray-300 mb-4">
+        <p className="text-gray-300 mb-3 leading-relaxed">
           Are you sure you want to convert this lead to a client?
         </p>
         <p className="text-gray-500 text-sm mb-6">
           This will create a new client record and mark this lead as "Won".
         </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setShowConvertModal(false)}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => setShowConvertModal(false)}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             variant="neon"
             onClick={handleConvert}
             loading={actionLoading}
+            className="w-full sm:w-auto"
           >
             Convert to Client
           </Button>
