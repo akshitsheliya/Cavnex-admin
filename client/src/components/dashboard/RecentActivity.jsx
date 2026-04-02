@@ -126,7 +126,7 @@ const RecentActivity = ({ activities = [], onActivityClick, onViewAll }) => {
                 </p>
               </div>
 
-              <div className="flex flex-col items-end gap-1">
+              <div className="flex-shrink-0 flex flex-col items-end gap-1 ml-2">
                 <span className="text-xs text-gray-500 flex-shrink-0">
                   {activity.time}
                 </span>

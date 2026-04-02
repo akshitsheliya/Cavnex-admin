@@ -439,7 +439,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="animate-pulse space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="glass-card p-6">
                 <div className="h-12 w-12 bg-white/10 rounded-xl mb-4" />
@@ -448,7 +448,7 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="lg:col-span-2 glass-card p-6">
               <div className="h-64 bg-white/5 rounded-xl" />
             </div>
@@ -472,8 +472,8 @@ const Dashboard = () => {
             Here's what's happening with your agency today.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 glass rounded-xl">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-2 glass rounded-xl">
             <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
             <span className="text-sm text-gray-300">
               {currentTime.toLocaleDateString("en-IN", {
@@ -506,13 +506,13 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {statCards.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card title="Revenue Overview" subtitle="Monthly revenue trends">
             <ChartCard
@@ -647,7 +647,7 @@ const Dashboard = () => {
 
       <QuickActions />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 overflow-hidden">
         <Card
           title="Recent Leads"
           subtitle="Latest incoming leads"
@@ -689,24 +689,24 @@ const Dashboard = () => {
                 <div
                   key={lead._id || index}
                   onClick={() => navigate(`/leads/${lead._id}`)}
-                  className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
+                  className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group overflow-hidden"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20">
-                      <span className="text-sm font-medium text-purple-400">
+                    <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20">
+                      <span className="text-sm font-medium text-purple-400 overflow-hidden">
                         {(lead.leadName || lead.name || lead.company || "L")
                           .charAt(0)
                           .toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
+                    <div className="min-w-0 max-w-48 flex-1">
+                      <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors truncate overflow-hiddens">
                         {lead.leadName || lead.name || lead.company}
                       </p>
-                      <p className="text-xs text-gray-500">{lead.email}</p>
+                      <p className="text-xs text-gray-500 truncate">{lead.email}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0 ml-2">
                     {getStatusBadge(lead.status)}
                     <p className="text-xs text-gray-500 mt-1">
                       {formatTimeAgo(lead.createdAt)}
@@ -761,12 +761,12 @@ const Dashboard = () => {
                   onClick={() => navigate(`/projects/${project._id}`)}
                   className="p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
+                  <div className="flex items-start sm:items-center justify-between mb-3 gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors truncate">
                         {project.projectName || project.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate">
                         {project.client?.clientName ||
                           project.client?.name ||
                           project.client?.company ||
@@ -854,7 +854,7 @@ const Dashboard = () => {
 
                 {selectedActivity.data?.updatedAt &&
                   selectedActivity.data.updatedAt !==
-                    selectedActivity.data.createdAt && (
+                  selectedActivity.data.createdAt && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Last Updated:</span>
                       <span className="text-white">
@@ -1040,7 +1040,7 @@ const Dashboard = () => {
                   <span className="text-neon-green font-semibold">
                     {formatCurrencyFull(
                       selectedActivity.data.total ||
-                        selectedActivity.data.amount
+                      selectedActivity.data.amount
                     )}
                   </span>
                 </div>
@@ -1079,7 +1079,7 @@ const Dashboard = () => {
         title="Monthly Revenue Breakdown"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
               <p className="text-xs text-gray-400 uppercase">Total Revenue</p>
               <p className="text-xl font-bold text-green-400 mt-1">

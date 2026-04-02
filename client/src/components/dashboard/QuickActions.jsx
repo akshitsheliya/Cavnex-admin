@@ -58,12 +58,12 @@ const QuickActions = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {actions.map((action, index) => (
           <button
             key={index}
             onClick={() => navigate(action.path)}
-            className="flex flex-col items-center gap-3 p-5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300 group"
+            className="flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300 group"
           >
             <div
               className={`p-4 rounded-xl bg-gradient-to-br ${action.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}
@@ -82,11 +82,11 @@ const QuickActions = () => {
                 />
               </svg>
             </div>
-            <div className="text-center">
-              <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors block">
+            <div className="text-center w-full">
+              <span className="text-xs sm:text-sm font-medium text-gray-300 group-hover:text-white transition-colors block truncate w-full">
                 {action.label}
               </span>
-              <span className="text-xs text-gray-500 hidden md:block mt-1">
+              <span className="text-[10px] sm:text-xs text-gray-500 hidden sm:block mt-1 truncate w-full">
                 {action.description}
               </span>
             </div>

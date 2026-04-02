@@ -33,7 +33,8 @@ const ChartCard = ({
       </div>
 
       {type === "bar" && (
-        <div className="h-64 flex items-end justify-between gap-2 px-4">
+        <div className="overflow-x-auto pb-4 custom-scrollbar">
+          <div className="min-w-[400px] h-64 flex items-end justify-between gap-2 px-2 sm:px-4">
           {chartData.map((value, i) => {
             const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
             return (
@@ -54,12 +55,14 @@ const ChartCard = ({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
       {type === "line" && (
-        <div className="h-64 relative">
-          <svg className="w-full h-full" viewBox="0 0 400 200">
+        <div className="overflow-x-auto pb-4 custom-scrollbar">
+          <div className="min-w-[400px] h-64 relative">
+            <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
             <defs>
               <linearGradient
                 id="lineGradient"
@@ -108,7 +111,8 @@ const ChartCard = ({
                 className="cursor-pointer hover:r-8 transition-all"
               />
             ))}
-          </svg>
+            </svg>
+          </div>
         </div>
       )}
     </div>

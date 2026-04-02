@@ -13,7 +13,7 @@ const StatCard = ({
     <div
       onClick={onClick}
       className={`
-                glass-card p-6 
+                glass-card p-4 sm:p-6 
                 hover:border-neon-green/30 
                 hover:shadow-[0_0_30px_rgba(0,255,136,0.1)] 
                 transition-all duration-300 
@@ -69,8 +69,8 @@ const StatCard = ({
       </div>
 
       <div className="mt-4">
-        <p className="text-gray-400 text-sm">{label}</p>
-        <p className="text-3xl font-bold text-white mt-1 group-hover:text-neon-green transition-colors">
+        <p className="text-gray-400 text-xs sm:text-sm truncate">{label}</p>
+        <p className="text-2xl sm:text-3xl font-bold text-white mt-1 group-hover:text-neon-green transition-colors truncate">
           {value}
         </p>
       </div>
