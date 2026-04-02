@@ -3,8 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
+import PhoneInput from "../../components/common/PhoneInput";
 import Loader from "../../components/common/Loader";
 import leadService from "../../services/leadService";
+import useFormValidation from "../../hooks/useFormValidation";
+import { leadSchema } from "../../validations";
 
 const LeadForm = () => {
   const navigate = useNavigate();
@@ -14,20 +17,31 @@ const LeadForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    leadName: "",
-    businessName: "",
-    businessType: "",
-    phone: "",
-    email: "",
-    city: "",
-    source: "website",
-    status: "new",
-    estimatedValue: "",
-    notes: "",
-    followUpDate: "",
-  });
-  const [errors, setErrors] = useState({});
+
+  const {
+    values: formData,
+    errors,
+    handleChange,
+    handleBlur,
+    setValues,
+    validate,
+    isSubmitDisabled,
+  } = useFormValidation(
+    {
+      leadName: "",
+      businessName: "",
+      businessType: "",
+      phone: "",
+      email: "",
+      city: "",
+      source: "website",
+      status: "new",
+      estimatedValue: "",
+      notes: "",
+      followUpDate: "",
+    },
+    leadSchema
+  );
 
   useEffect(() => {
     if (isEditMode) {
@@ -40,7 +54,7 @@ const LeadForm = () => {
       setLoading(true);
       const response = await leadService.getLead(id);
       const lead = response.data;
-      setFormData({
+      setValues({
         leadName: lead.leadName || "",
         businessName: lead.businessName || "",
         businessType: lead.businessType || "",
@@ -60,44 +74,12 @@ const LeadForm = () => {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.leadName.trim()) {
-      newErrors.leadName = "Lead name is required";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid 10-digit phone number";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!validateForm()) {
-      return;
-    }
+    const isValid = await validate();
+    if (!isValid) return;
 
     try {
       setSubmitting(true);
@@ -196,7 +178,7 @@ const LeadForm = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <Card title="Contact Information" className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -204,6 +186,7 @@ const LeadForm = () => {
               name="leadName"
               value={formData.leadName}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter lead name"
               error={errors.leadName}
               required
@@ -222,12 +205,12 @@ const LeadForm = () => {
               onChange={handleChange}
               placeholder="e.g., E-commerce, SaaS, etc."
             />
-            <Input
+            <PhoneInput
               label="Phone Number"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="10-digit phone number"
+              onBlur={handleBlur}
               error={errors.phone}
               required
             />
@@ -237,6 +220,7 @@ const LeadForm = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter email address"
               error={errors.email}
               required
@@ -293,7 +277,9 @@ const LeadForm = () => {
               type="number"
               value={formData.estimatedValue}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter estimated value"
+              error={errors.estimatedValue}
             />
             <Input
               label="Follow-up Date"
@@ -327,7 +313,12 @@ const LeadForm = () => {
           >
             Cancel
           </Button>
-          <Button type="submit" variant="neon" loading={submitting}>
+          <Button
+            type="submit"
+            variant="neon"
+            loading={submitting}
+            disabled={isSubmitDisabled(submitting)}
+          >
             {isEditMode ? "Update Lead" : "Create Lead"}
           </Button>
         </div>

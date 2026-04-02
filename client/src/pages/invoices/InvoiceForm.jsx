@@ -17,6 +17,8 @@ import {
   defaultNotes,
   taxRates,
 } from "../../data/invoiceTemplates";
+import { validateSchema } from "../../utils/validators";
+import { invoiceSchema } from "../../validations";
 
 const InvoiceForm = () => {
   const navigate = useNavigate();
@@ -225,20 +227,15 @@ const InvoiceForm = () => {
     }
   };
 
-  const validateForm = () => {
-    const errors = [];
+  const validateForm = async () => {
+    const { isValid, errors: validationErrors } = await validateSchema(
+      invoiceSchema,
+      formData
+    );
 
-    if (!formData.client) errors.push("Client is required");
-    if (!formData.dueDate) errors.push("Due date is required");
-    if (formData.items.length === 0)
-      errors.push("At least one item is required");
-    if (formData.items.some((item) => !item.description))
-      errors.push("All items must have a description");
-    if (formData.items.some((item) => item.rate <= 0))
-      errors.push("All items must have a valid rate");
-
-    if (errors.length > 0) {
-      setError(errors.join(", "));
+    if (!isValid) {
+      const messages = Object.values(validationErrors).filter(Boolean);
+      setError(messages.join(" | "));
       return false;
     }
 
@@ -246,7 +243,8 @@ const InvoiceForm = () => {
   };
 
   const handleSubmit = async (status = "draft") => {
-    if (!validateForm()) return;
+    const isValid = await validateForm();
+    if (!isValid) return;
 
     try {
       setSaving(true);

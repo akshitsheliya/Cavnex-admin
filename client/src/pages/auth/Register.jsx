@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
-import useForm from "../../hooks/useForm";
+import useFormValidation from "../../hooks/useFormValidation";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import api from "../../services/api";
+import { registerSchema } from "../../validations";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -12,41 +13,29 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { values, errors, handleChange, setFormErrors } = useForm({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const { values, errors, handleChange, handleBlur, validate, isSubmitDisabled } =
+    useFormValidation(
+      {
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      },
+      registerSchema
+    );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!values.name || !values.email || !values.password) {
-      setFormErrors({
-        name: !values.name ? "Name is required" : "",
-        email: !values.email ? "Email is required" : "",
-        password: !values.password ? "Password is required" : "",
-      });
-      return;
-    }
-
-    if (values.password !== values.confirmPassword) {
-      setFormErrors({ confirmPassword: "Passwords do not match" });
-      return;
-    }
-
-    if (values.password.length < 6) {
-      setFormErrors({ password: "Password must be at least 6 characters" });
-      return;
-    }
+    const isValid = await validate();
+    if (!isValid) return;
 
     try {
       setLoading(true);
       const response = await api.post("/auth/register", {
-        name: values.name,
-        email: values.email,
+        name: values.name.trim(),
+        email: values.email.trim(),
         password: values.password,
       });
       login(response.data.user, response.data.token);
@@ -102,12 +91,13 @@ const Register = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-1">
+        <form onSubmit={handleSubmit} className="space-y-1" noValidate>
           <Input
             label="Full Name"
             name="name"
             value={values.name}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="John Doe"
             error={errors.name}
             required
@@ -134,6 +124,7 @@ const Register = () => {
             type="email"
             value={values.email}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="you@example.com"
             error={errors.email}
             required
@@ -160,6 +151,7 @@ const Register = () => {
             type="password"
             value={values.password}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="••••••••"
             error={errors.password}
             required
@@ -180,12 +172,25 @@ const Register = () => {
             }
           />
 
+          {/* Password strength hint */}
+          {values.password && !errors.password && (
+            <p className="text-xs text-neon-green/70 -mt-3 px-1">
+              ✓ Strong password
+            </p>
+          )}
+          {values.password && errors.password && (
+            <p className="text-xs text-amber-400/80 -mt-3 px-1">
+              Must be 8+ chars with uppercase, lowercase, number & special character
+            </p>
+          )}
+
           <Input
             label="Confirm Password"
             name="confirmPassword"
             type="password"
             value={values.confirmPassword}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="••••••••"
             error={errors.confirmPassword}
             required
@@ -235,6 +240,7 @@ const Register = () => {
             type="submit"
             variant="neon"
             loading={loading}
+            disabled={isSubmitDisabled(loading)}
             fullWidth
             size="lg"
           >

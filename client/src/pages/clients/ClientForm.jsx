@@ -3,8 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
+import PhoneInput from "../../components/common/PhoneInput";
 import Loader from "../../components/common/Loader";
 import clientService from "../../services/clientService";
+import useFormValidation from "../../hooks/useFormValidation";
+import { clientSchema } from "../../validations";
 
 const ClientForm = () => {
   const navigate = useNavigate();
@@ -14,34 +17,47 @@ const ClientForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    clientName: "",
-    businessName: "",
-    industry: "",
-    email: "",
-    phone: "",
-    alternatePhone: "",
-    website: "",
-    gstNumber: "",
-    address: {
-      street: "",
-      city: "",
-      state: "",
-      country: "India",
-      pincode: "",
-    },
-    contactPerson: {
-      name: "",
-      designation: "",
+
+  const {
+    values: formData,
+    errors,
+    handleChange,
+    handleBlur,
+    handleNestedChange,
+    handleDotNotationChange,
+    setValues,
+    validate,
+    isSubmitDisabled,
+  } = useFormValidation(
+    {
+      clientName: "",
+      businessName: "",
+      industry: "",
       email: "",
       phone: "",
+      alternatePhone: "",
+      website: "",
+      gstNumber: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        country: "India",
+        pincode: "",
+      },
+      contactPerson: {
+        name: "",
+        designation: "",
+        email: "",
+        phone: "",
+      },
+      source: "other",
+      status: "active",
+      notes: "",
+      tags: [],
     },
-    source: "other",
-    status: "active",
-    notes: "",
-    tags: [],
-  });
-  const [errors, setErrors] = useState({});
+    clientSchema
+  );
 
   useEffect(() => {
     if (isEditMode) {
@@ -54,7 +70,7 @@ const ClientForm = () => {
       setLoading(true);
       const response = await clientService.getClient(id);
       const client = response.data;
-      setFormData({
+      setValues({
         clientName: client.clientName || "",
         businessName: client.businessName || "",
         industry: client.industry || "",
@@ -88,61 +104,12 @@ const ClientForm = () => {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.clientName.trim()) {
-      newErrors.clientName = "Client name is required";
-    }
-
-    if (!formData.businessName.trim()) {
-      newErrors.businessName = "Business name is required";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid 10-digit phone number";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!validateForm()) {
-      return;
-    }
+    const isValid = await validate();
+    if (!isValid) return;
 
     try {
       setSubmitting(true);
@@ -247,7 +214,7 @@ const ClientForm = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <Card title="Basic Information" className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -255,6 +222,7 @@ const ClientForm = () => {
               name="clientName"
               value={formData.clientName}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter contact person name"
               error={errors.clientName}
               required
@@ -264,6 +232,7 @@ const ClientForm = () => {
               name="businessName"
               value={formData.businessName}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter business/company name"
               error={errors.businessName}
               required
@@ -291,7 +260,9 @@ const ClientForm = () => {
               name="website"
               value={formData.website}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="https://example.com"
+              error={errors.website}
             />
           </div>
         </Card>
@@ -304,32 +275,37 @@ const ClientForm = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter email address"
               error={errors.email}
               required
             />
-            <Input
+            <PhoneInput
               label="Phone Number"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="10-digit phone number"
+              onBlur={handleBlur}
               error={errors.phone}
               required
             />
-            <Input
+            <PhoneInput
               label="Alternate Phone"
               name="alternatePhone"
               value={formData.alternatePhone}
               onChange={handleChange}
-              placeholder="Alternate phone number"
+              onBlur={handleBlur}
+              error={errors.alternatePhone}
+              placeholder="98765 43210"
             />
             <Input
               label="GST Number"
               name="gstNumber"
               value={formData.gstNumber}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="e.g., 22AAAAA0000A1Z5"
+              error={errors.gstNumber}
             />
           </div>
         </Card>
@@ -341,7 +317,7 @@ const ClientForm = () => {
                 label="Street Address"
                 name="address.street"
                 value={formData.address.street}
-                onChange={handleChange}
+                onChange={handleDotNotationChange}
                 placeholder="Enter street address"
               />
             </div>
@@ -349,29 +325,31 @@ const ClientForm = () => {
               label="City"
               name="address.city"
               value={formData.address.city}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
               placeholder="Enter city"
             />
             <Input
               label="State"
               name="address.state"
               value={formData.address.state}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
               placeholder="Enter state"
             />
             <Input
               label="Country"
               name="address.country"
               value={formData.address.country}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
               placeholder="Enter country"
             />
             <Input
               label="Pincode"
               name="address.pincode"
               value={formData.address.pincode}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
+              onBlur={handleBlur}
               placeholder="Enter pincode"
+              error={errors["address.pincode"]}
             />
           </div>
         </Card>
@@ -382,14 +360,16 @@ const ClientForm = () => {
               label="Name"
               name="contactPerson.name"
               value={formData.contactPerson.name}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
+              onBlur={handleBlur}
               placeholder="Contact person name"
+              error={errors["contactPerson.name"]}
             />
             <Input
               label="Designation"
               name="contactPerson.designation"
               value={formData.contactPerson.designation}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
               placeholder="e.g., CEO, Manager"
             />
             <Input
@@ -397,15 +377,21 @@ const ClientForm = () => {
               name="contactPerson.email"
               type="email"
               value={formData.contactPerson.email}
-              onChange={handleChange}
+              onChange={handleDotNotationChange}
+              onBlur={handleBlur}
               placeholder="Contact person email"
+              error={errors["contactPerson.email"]}
             />
-            <Input
+            <PhoneInput
               label="Phone"
               name="contactPerson.phone"
               value={formData.contactPerson.phone}
-              onChange={handleChange}
-              placeholder="Contact person phone"
+              onChange={(e) =>
+                handleNestedChange("contactPerson", "phone", e.target.value)
+              }
+              onBlur={handleBlur}
+              placeholder="98765 43210"
+              error={errors["contactPerson.phone"]}
             />
           </div>
         </Card>
@@ -471,7 +457,12 @@ const ClientForm = () => {
           >
             Cancel
           </Button>
-          <Button type="submit" variant="neon" loading={submitting}>
+          <Button
+            type="submit"
+            variant="neon"
+            loading={submitting}
+            disabled={isSubmitDisabled(submitting)}
+          >
             {isEditMode ? "Update Client" : "Create Client"}
           </Button>
         </div>

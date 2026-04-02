@@ -6,12 +6,14 @@ const Input = ({
   type = "text",
   value,
   onChange,
+  onBlur,
   placeholder,
   error,
   required = false,
   disabled = false,
   icon,
   className = "",
+  ...rest
 }) => {
   return (
     <div className={`mb-5 ${className}`}>
@@ -36,8 +38,10 @@ const Input = ({
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           placeholder={placeholder}
           disabled={disabled}
+          {...rest}
           className={`
                         w-full px-4 py-3.5 rounded-xl text-white placeholder-gray-500 
                         transition-all duration-300 outline-none
