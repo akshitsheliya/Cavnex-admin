@@ -117,6 +117,39 @@ select option {
   @apply bg-gray-900 text-white;
 }
 
+/* Custom select arrow */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px !important;
+}
+
+/* Native date inputs: dark colour scheme */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+/* Prevent modal content from overflowing on very small screens */
+.modal-content-scroll {
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+/* Responsive table scroll */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Truncate utility helper */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Print styles */
 @media print {
   .print\\:hidden {

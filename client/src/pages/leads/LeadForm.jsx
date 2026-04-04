@@ -1,126 +1,27 @@
+// LeadForm.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Form, Select, DatePicker, Input as AntInput, message } from "antd";
+import dayjs from "dayjs";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
+import PhoneInput from "../../components/common/PhoneInput";
 import Loader from "../../components/common/Loader";
 import leadService from "../../services/leadService";
+
+const { TextArea } = AntInput;
+const { Option } = Select;
 
 const LeadForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
+  const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    leadName: "",
-    businessName: "",
-    businessType: "",
-    phone: "",
-    email: "",
-    city: "",
-    source: "website",
-    status: "new",
-    estimatedValue: "",
-    notes: "",
-    followUpDate: "",
-  });
-  const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    if (isEditMode) {
-      fetchLead();
-    }
-  }, [id]);
-
-  const fetchLead = async () => {
-    try {
-      setLoading(true);
-      const response = await leadService.getLead(id);
-      const lead = response.data;
-      setFormData({
-        leadName: lead.leadName || "",
-        businessName: lead.businessName || "",
-        businessType: lead.businessType || "",
-        phone: lead.phone || "",
-        email: lead.email || "",
-        city: lead.city || "",
-        source: lead.source || "website",
-        status: lead.status || "new",
-        estimatedValue: lead.estimatedValue || "",
-        notes: lead.notes || "",
-        followUpDate: lead.followUpDate ? lead.followUpDate.split("T")[0] : "",
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch lead");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.leadName.trim()) {
-      newErrors.leadName = "Lead name is required";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid 10-digit phone number";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const dataToSubmit = {
-        ...formData,
-        estimatedValue: formData.estimatedValue
-          ? Number(formData.estimatedValue)
-          : 0,
-      };
-
-      if (isEditMode) {
-        await leadService.updateLead(id, dataToSubmit);
-      } else {
-        await leadService.createLead(dataToSubmit);
-      }
-
-      navigate("/leads");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to save lead");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const sourceOptions = [
     { value: "website", label: "Website" },
@@ -143,19 +44,81 @@ const LeadForm = () => {
     { value: "closed_lost", label: "Closed Lost" },
   ];
 
+  useEffect(() => {
+    if (isEditMode) {
+      fetchLead();
+    }
+  }, [id]);
+
+  const fetchLead = async () => {
+    try {
+      setLoading(true);
+      const response = await leadService.getLead(id);
+      const lead = response.data;
+      form.setFieldsValue({
+        leadName: lead.leadName || "",
+        businessName: lead.businessName || "",
+        businessType: lead.businessType || "",
+        phone: lead.phone || "",
+        email: lead.email || "",
+        city: lead.city || "",
+        source: lead.source || "website",
+        status: lead.status || "new",
+        estimatedValue: lead.estimatedValue || "",
+        notes: lead.notes || "",
+        followUpDate: lead.followUpDate ? dayjs(lead.followUpDate) : null,
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch lead");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (values) => {
+    setError("");
+    try {
+      setSubmitting(true);
+      const dataToSubmit = {
+        ...values,
+        estimatedValue: values.estimatedValue
+          ? Number(values.estimatedValue)
+          : 0,
+        followUpDate: values.followUpDate
+          ? values.followUpDate.toISOString()
+          : null,
+      };
+
+      if (isEditMode) {
+        await leadService.updateLead(id, dataToSubmit);
+        message.success("Lead updated successfully");
+      } else {
+        await leadService.createLead(dataToSubmit);
+        message.success("Lead created successfully");
+      }
+
+      navigate("/leads");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save lead");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <Loader />;
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
+    <div className="max-w-4xl mx-auto px-2 sm:px-0">
+      {/* Back navigation & heading */}
+      <div className="mb-4 sm:mb-6">
         <button
           onClick={() => navigate("/leads")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-3 sm:mb-4 group"
         >
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -167,22 +130,23 @@ const LeadForm = () => {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          Back to Leads
+          <span className="text-sm">Back to Leads</span>
         </button>
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
           {isEditMode ? "Edit Lead" : "Add New Lead"}
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-gray-400 mt-1 text-xs sm:text-sm lg:text-base">
           {isEditMode
             ? "Update lead information"
             : "Fill in the lead details below"}
         </p>
       </div>
 
+      {/* Error Alert */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2 sm:gap-3">
           <svg
-            className="w-5 h-5 text-red-400 flex-shrink-0"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0 mt-0.5"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -192,146 +156,320 @@ const LeadForm = () => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400 text-xs sm:text-sm leading-relaxed">
+            {error}
+          </p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <Card title="Contact Information" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Lead Name"
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={{
+          source: "website",
+          status: "new",
+        }}
+        className="lead-form"
+      >
+        {/* Contact Information Card */}
+        <Card title="Contact Information" className="mb-4 sm:mb-5 lg:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4">
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Lead Name <span className="text-neon-green">*</span>
+                </span>
+              }
               name="leadName"
-              value={formData.leadName}
-              onChange={handleChange}
-              placeholder="Enter lead name"
-              error={errors.leadName}
-              required
-            />
-            <Input
-              label="Business Name"
+              rules={[{ required: true, message: "Please enter lead name" }]}
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter lead name"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">Business Name</span>
+              }
               name="businessName"
-              value={formData.businessName}
-              onChange={handleChange}
-              placeholder="Enter business name"
-            />
-            <Input
-              label="Business Type"
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter business name"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">Business Type</span>
+              }
               name="businessType"
-              value={formData.businessType}
-              onChange={handleChange}
-              placeholder="e.g., E-commerce, SaaS, etc."
-            />
-            <Input
-              label="Phone Number"
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="e.g., E-commerce, SaaS, etc."
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Phone Number <span className="text-neon-green">*</span>
+                </span>
+              }
               name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="10-digit phone number"
-              error={errors.phone}
-              required
-            />
-            <Input
-              label="Email Address"
+              rules={[{ required: true, message: "Please enter phone number" }]}
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter phone number"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Email Address <span className="text-neon-green">*</span>
+                </span>
+              }
               name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter email address"
-              error={errors.email}
-              required
-            />
-            <Input
-              label="City"
+              rules={[
+                { required: true, message: "Please enter email" },
+                { type: "email", message: "Please enter a valid email" },
+              ]}
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter email address"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-gray-300 text-sm">City</span>}
               name="city"
-              value={formData.city}
-              onChange={handleChange}
-              placeholder="Enter city"
-            />
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter city"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
           </div>
         </Card>
 
-        <Card title="Lead Details" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Lead Source <span className="text-neon-green">*</span>
-              </label>
-              <select
-                name="source"
-                value={formData.source}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
+        {/* Lead Details Card */}
+        <Card title="Lead Details" className="mb-4 sm:mb-5 lg:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4">
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Lead Source <span className="text-neon-green">*</span>
+                </span>
+              }
+              name="source"
+              className="mb-0"
+            >
+              <Select
+                placeholder="Select source"
+                className="custom-select w-full h-10 sm:h-11"
+                dropdownClassName="custom-dropdown"
+                popupClassName="custom-dropdown"
               >
-                {sourceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {sourceOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-gray-300 text-sm">Status</span>}
+              name="status"
+              className="mb-0"
+            >
+              <Select
+                placeholder="Select status"
+                className="custom-select w-full h-10 sm:h-11"
+                dropdownClassName="custom-dropdown"
+                popupClassName="custom-dropdown"
               >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {statusOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
                 ))}
-              </select>
-            </div>
-            <Input
-              label="Estimated Value (₹)"
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Estimated Value (₹)
+                </span>
+              }
               name="estimatedValue"
-              type="number"
-              value={formData.estimatedValue}
-              onChange={handleChange}
-              placeholder="Enter estimated value"
-            />
-            <Input
-              label="Follow-up Date"
+              className="mb-0"
+            >
+              <AntInput
+                type="number"
+                placeholder="Enter estimated value"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">Follow-up Date</span>
+              }
               name="followUpDate"
-              type="date"
-              value={formData.followUpDate}
-              onChange={handleChange}
-            />
+              className="mb-0"
+            >
+              <DatePicker
+                placeholder="Select date"
+                className="custom-datepicker w-full h-10 sm:h-11 bg-white/5 border-white/10 text-white rounded-xl"
+                format="DD/MM/YYYY"
+                popupClassName="custom-datepicker-dropdown"
+              />
+            </Form.Item>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
+          <Form.Item
+            label={<span className="text-gray-300 text-sm">Notes</span>}
+            name="notes"
+            className="mb-0 mt-3 sm:mt-4"
+          >
+            <TextArea
               rows={4}
               placeholder="Add any additional notes about this lead..."
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50 resize-none"
+              className="custom-textarea bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50 resize-none"
             />
-          </div>
+          </Form.Item>
         </Card>
 
-        <div className="flex items-center justify-end gap-4">
+        {/* Action Buttons */}
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
           <Button
             type="button"
             variant="ghost"
             onClick={() => navigate("/leads")}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
-          <Button type="submit" variant="neon" loading={submitting}>
+          <Button
+            type="submit"
+            variant="neon"
+            loading={submitting}
+            disabled={submitting}
+            className="w-full sm:w-auto"
+          >
             {isEditMode ? "Update Lead" : "Create Lead"}
           </Button>
         </div>
-      </form>
+      </Form>
+
+      <style jsx global>{`
+        .lead-form .ant-form-item-label > label {
+          color: #d1d5db;
+          font-size: 0.875rem;
+        }
+        .lead-form .ant-input,
+        .lead-form .ant-input-number,
+        .lead-form .ant-picker {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          color: white !important;
+        }
+        .lead-form .ant-input:hover,
+        .lead-form .ant-input:focus,
+        .lead-form .ant-picker:hover,
+        .lead-form .ant-picker-focused {
+          border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+        .lead-form .ant-input::placeholder {
+          color: #6b7280 !important;
+        }
+        .lead-form .ant-select-selector {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+          height: 2.75rem !important;
+          padding: 0 1rem !important;
+        }
+        .lead-form .ant-select-selection-item,
+        .lead-form .ant-select-selection-placeholder {
+          line-height: 2.75rem !important;
+          color: white !important;
+        }
+        .lead-form .ant-select-selection-placeholder {
+          color: #6b7280 !important;
+        }
+        .lead-form .ant-select:hover .ant-select-selector,
+        .lead-form .ant-select-focused .ant-select-selector {
+          border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+        .lead-form .ant-select-arrow {
+          color: #9ca3af !important;
+        }
+        .lead-form .ant-picker-input > input {
+          color: white !important;
+        }
+        .lead-form .ant-picker-input > input::placeholder {
+          color: #6b7280 !important;
+        }
+        .lead-form .ant-picker-suffix,
+        .lead-form .ant-picker-clear {
+          color: #9ca3af !important;
+        }
+        .custom-dropdown {
+          background: #1a1a2e !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+        }
+        .custom-dropdown .ant-select-item {
+          color: white !important;
+        }
+        .custom-dropdown .ant-select-item-option-active,
+        .custom-dropdown .ant-select-item-option-selected {
+          background: rgba(0, 255, 136, 0.1) !important;
+        }
+        .custom-datepicker-dropdown {
+          background: #1a1a2e !important;
+        }
+        .custom-datepicker-dropdown .ant-picker-panel {
+          background: #1a1a2e !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .custom-datepicker-dropdown .ant-picker-header,
+        .custom-datepicker-dropdown .ant-picker-content th,
+        .custom-datepicker-dropdown .ant-picker-cell {
+          color: white !important;
+        }
+        .custom-datepicker-dropdown
+          .ant-picker-cell-in-view.ant-picker-cell-selected
+          .ant-picker-cell-inner {
+          background: #00ff88 !important;
+          color: #000 !important;
+        }
+        @media (max-width: 640px) {
+          .lead-form .ant-select-selector {
+            height: 2.5rem !important;
+          }
+          .lead-form .ant-select-selection-item,
+          .lead-form .ant-select-selection-placeholder {
+            line-height: 2.5rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

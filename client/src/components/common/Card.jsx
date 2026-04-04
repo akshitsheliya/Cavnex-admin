@@ -24,7 +24,7 @@ const Card = ({
       )}
 
       {(title || actions) && (
-        <div className="relative flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div className="relative flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5">
           <div>
             {title && (
               <h3 className="text-lg font-semibold text-white">{title}</h3>
@@ -37,7 +37,7 @@ const Card = ({
         </div>
       )}
 
-      <div className={`relative ${padding ? "p-6" : ""}`}>{children}</div>
+      <div className={`relative ${padding ? "p-4 sm:p-6" : ""}`}>{children}</div>
     </div>
   );
 };

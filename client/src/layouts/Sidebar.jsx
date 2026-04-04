@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { Modal } from "antd";
 import useAuth from "../hooks/useAuth";
-import logo from "../assets/Frame_1.svg";
+import logo from "../assets/cavnex_main.svg";
 
 const menuItems = [
   {
@@ -352,7 +352,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
           <div
             className={`flex items-center min-w-0 ${isCollapsed ? "" : "gap-3 flex-1"}`}
           >
-            <div className="w-10 h-10 rounded-xl glass-card flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 p-[6px] rounded-full bg-white/[0.02] backdrop-blur-xl border border-white/10  flex items-center justify-center flex-shrink-0">
               <img src={logo} alt="Cavnex Logo" />
             </div>
             {!isCollapsed && (

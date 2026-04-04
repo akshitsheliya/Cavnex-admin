@@ -173,7 +173,7 @@ const ProjectList = () => {
         <Loader />
       ) : projects.length === 0 ? (
         <EmptyState
-          icon="📁"
+       
           title="No projects found"
           description={
             hasFilters

@@ -361,7 +361,7 @@ const AgreementList = () => {
         <Loader />
       ) : agreements.length === 0 ? (
         <EmptyState
-          icon="📜"
+ 
           title="No agreements found"
           description={
             hasFilters

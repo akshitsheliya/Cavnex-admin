@@ -1,5 +1,9 @@
+// LeadFilters.jsx
 import React from "react";
-import Input from "../common/Input";
+import { Input, Select } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+
+const { Option } = Select;
 
 const LeadFilters = ({ filters, onFilterChange, onReset }) => {
   const statusOptions = [
@@ -26,62 +30,112 @@ const LeadFilters = ({ filters, onFilterChange, onReset }) => {
   ];
 
   return (
-    <div className="glass-card p-4 mb-6">
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1">
+    <div className="glass-card p-3 sm:p-4 mb-4 sm:mb-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="flex-1 min-w-0">
           <Input
             placeholder="Search leads..."
+            prefix={<SearchOutlined className="text-gray-400" />}
             value={filters.search || ""}
             onChange={(e) => onFilterChange("search", e.target.value)}
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            }
+            className="custom-search-input w-full"
+            allowClear
           />
         </div>
 
-        <select
-          value={filters.status || ""}
-          onChange={(e) => onFilterChange("status", e.target.value)}
-          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50 min-w-[160px]"
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Select
+            value={filters.status || undefined}
+            onChange={(value) => onFilterChange("status", value || "")}
+            placeholder="All Status"
+            allowClear
+            className="custom-filter-select w-full sm:w-36 lg:w-40"
+            popupClassName="custom-dropdown"
+          >
+            {statusOptions.slice(1).map((option) => (
+              <Option key={option.value} value={option.value}>
+                {option.label}
+              </Option>
+            ))}
+          </Select>
 
-        <select
-          value={filters.source || ""}
-          onChange={(e) => onFilterChange("source", e.target.value)}
-          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50 min-w-[160px]"
-        >
-          {sourceOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <Select
+            value={filters.source || undefined}
+            onChange={(value) => onFilterChange("source", value || "")}
+            placeholder="All Sources"
+            allowClear
+            className="custom-filter-select w-full sm:w-36 lg:w-40"
+            popupClassName="custom-dropdown"
+          >
+            {sourceOptions.slice(1).map((option) => (
+              <Option key={option.value} value={option.value}>
+                {option.label}
+              </Option>
+            ))}
+          </Select>
 
-        <button
-          onClick={onReset}
-          className="px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
-        >
-          Reset
-        </button>
+          <button
+            onClick={onReset}
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors whitespace-nowrap"
+          >
+            Reset
+          </button>
+        </div>
       </div>
+
+      <style jsx global>{`
+        .custom-search-input {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+          height: 2.5rem !important;
+        }
+        .custom-search-input .ant-input {
+          background: transparent !important;
+          color: white !important;
+        }
+        .custom-search-input .ant-input::placeholder {
+          color: #6b7280 !important;
+        }
+        .custom-search-input:hover,
+        .custom-search-input:focus-within {
+          border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+        .custom-filter-select .ant-select-selector {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+          height: 2.5rem !important;
+          padding: 0 0.75rem !important;
+        }
+        .custom-filter-select .ant-select-selection-item,
+        .custom-filter-select .ant-select-selection-placeholder {
+          line-height: 2.5rem !important;
+          color: white !important;
+        }
+        .custom-filter-select .ant-select-selection-placeholder {
+          color: #9ca3af !important;
+        }
+        .custom-filter-select:hover .ant-select-selector {
+          border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+        .custom-filter-select .ant-select-arrow,
+        .custom-filter-select .ant-select-clear {
+          color: #9ca3af !important;
+        }
+        .custom-dropdown {
+          background: #1a1a2e !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+        }
+        .custom-dropdown .ant-select-item {
+          color: white !important;
+        }
+        .custom-dropdown .ant-select-item-option-active,
+        .custom-dropdown .ant-select-item-option-selected {
+          background: rgba(0, 255, 136, 0.1) !important;
+        }
+      `}</style>
     </div>
   );
 };

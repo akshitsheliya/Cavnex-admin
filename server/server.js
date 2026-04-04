@@ -27,7 +27,7 @@ app.use(
   })
 );
 
-// CORS Configuration
+// ✅ CORS Configuration - FIXED
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
@@ -37,10 +37,39 @@ const allowedOrigins = [
   "https://www.cavnex.in",
 ];
 
+// ✅ STEP 1: Handle CORS manually BEFORE everything else
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  // Check if origin is allowed
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+    );
+    res.setHeader("Access-Control-Max-Age", "86400");
+  }
+
+  // ✅ Handle preflight OPTIONS request immediately
+  if (req.method === "OPTIONS") {
+    console.log("✅ Preflight OPTIONS request handled:", req.path);
+    return res.status(204).end();
+  }
+
+  next();
+});
+
+// ✅ STEP 2: Also use cors middleware as backup
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.log("❌ CORS blocked origin:", origin);
@@ -49,7 +78,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
   maxAge: 86400,
   preflightContinue: false,

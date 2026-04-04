@@ -33,13 +33,12 @@ const StatCard = ({
           </svg>
         </div>
         <div
-          className={`px-2 py-1 rounded-lg text-xs font-medium ${
-            changeType === "positive"
+          className={`px-2 py-1 rounded-lg text-xs font-medium ${changeType === "positive"
               ? "bg-neon-green/10 text-neon-green"
               : changeType === "negative"
                 ? "bg-red-500/10 text-red-400"
                 : "bg-gray-500/10 text-gray-400"
-          }`}
+            }`}
         >
           {change}
         </div>

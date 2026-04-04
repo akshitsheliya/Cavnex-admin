@@ -275,101 +275,58 @@ const ChartCard = ({
         </select>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-          <p className="text-xs text-gray-400">Total Revenue</p>
-          <p className="text-lg font-bold text-neon-green">
-            {formatCurrency(totalRevenue)}
-          </p>
-        </div>
-        <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-          <p className="text-xs text-gray-400">Received</p>
-          <p className="text-lg font-bold text-green-400">
-            {formatCurrency(totalPaid)}
-          </p>
-        </div>
-        <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-          <p className="text-xs text-gray-400">Projects</p>
-          <p className="text-lg font-bold text-white">{totalProjects}</p>
-        </div>
-      </div>
+      {type === "bar" && (
+        <div className="overflow-x-auto pb-4 custom-scrollbar">
+          <div className="min-w-[400px] h-64 flex items-end justify-between gap-2 px-2 sm:px-4">
+            {chartData.map((value, i) => {
+              const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
+              const hasData = value > 0;
 
-      {/* Bar Chart */}
-      {chartData.length === 0 ? (
-        <div className="h-64 flex items-center justify-center">
-          <div className="text-center">
-            <svg
-              className="w-12 h-12 mx-auto text-gray-600 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.5"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-            <p className="text-gray-400">No revenue data available</p>
-            <p className="text-gray-500 text-sm mt-1">
-              Complete projects to see revenue
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="h-64 flex items-end justify-between gap-1 sm:gap-2 px-2">
-          {chartData.map((item, i) => {
-            const value = item.total || item.value || 0;
-            const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
-            const hasData = value > 0;
+              return (
+                <div
+                  key={i}
+                  className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
+                  onClick={() => handleBarClick(item, i)}
+                >
+                  <div className="relative w-full flex justify-center">
+                    {/* Bar */}
+                    <div
+                      className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 ${hasData
+                          ? "bg-gradient-to-t from-neon-green/60 to-neon-blue/60 hover:from-neon-green hover:to-neon-blue group-hover:shadow-[0_0_20px_rgba(0,255,136,0.4)]"
+                          : "bg-white/10"
+                        }`}
+                      style={{ height: `${Math.max(height * 2, 8)}px` }}
+                    />
 
-            return (
-              <div
-                key={i}
-                className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
-                onClick={() => handleBarClick(item, i)}
-              >
-                <div className="relative w-full flex justify-center">
-                  {/* Bar */}
-                  <div
-                    className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 ${
-                      hasData
-                        ? "bg-gradient-to-t from-neon-green/60 to-neon-blue/60 hover:from-neon-green hover:to-neon-blue group-hover:shadow-[0_0_20px_rgba(0,255,136,0.4)]"
-                        : "bg-white/10"
-                    }`}
-                    style={{ height: `${Math.max(height * 2, 8)}px` }}
-                  />
-
-                  {/* Tooltip on hover */}
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 px-3 py-2 bg-dark-600 border border-white/10 rounded-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                    <p className="font-semibold text-neon-green">
-                      {formatCurrency(value)}
-                    </p>
-                    <p className="text-gray-400">
-                      {item.projectCount || 0} projects
-                    </p>
-                    {item.paid > 0 && (
-                      <p className="text-green-400">
-                        Paid: {formatCurrency(item.paid)}
+                    {/* Tooltip on hover */}
+                    <div className="absolute -top-16 left-1/2 -translate-x-1/2 px-3 py-2 bg-dark-600 border border-white/10 rounded-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                      <p className="font-semibold text-neon-green">
+                        {formatCurrency(value)}
                       </p>
+                      <p className="text-gray-400">
+                        {item.projectCount || 0} projects
+                      </p>
+                      {item.paid > 0 && (
+                        <p className="text-green-400">
+                          Paid: {formatCurrency(item.paid)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Click indicator */}
+                    {hasData && (
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-neon-green rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
                     )}
                   </div>
 
-                  {/* Click indicator */}
-                  {hasData && (
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-neon-green rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-                  )}
+                  {/* Label */}
+                  <span className="text-xs text-gray-500 group-hover:text-white transition-colors">
+                    {getBarLabel(item, i)}
+                  </span>
                 </div>
-
-                {/* Label */}
-                <span className="text-xs text-gray-500 group-hover:text-white transition-colors">
-                  {getBarLabel(item, i)}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -428,8 +385,8 @@ const ChartCard = ({
                   <p className="text-lg font-bold text-white">
                     {selectedData.total > 0
                       ? Math.round(
-                          ((selectedData.paid || 0) / selectedData.total) * 100
-                        )
+                        ((selectedData.paid || 0) / selectedData.total) * 100
+                      )
                       : 0}
                     %
                   </p>

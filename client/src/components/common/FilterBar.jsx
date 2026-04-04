@@ -102,13 +102,12 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-300 ${
-          isOpen
-            ? "bg-white/[0.08] border-neon-green/50 shadow-[0_0_15px_rgba(57,255,20,0.1)]"
-            : value
-              ? "bg-neon-green/[0.08] border-neon-green/30 text-neon-green"
-              : "bg-white/[0.03] border-white/10 text-gray-400 hover:bg-white/[0.06] hover:border-white/20"
-        }`}
+        className={`w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-300 ${isOpen
+          ? "bg-white/[0.08] border-neon-green/50 shadow-[0_0_15px_rgba(57,255,20,0.1)]"
+          : value
+            ? "bg-neon-green/[0.08] border-neon-green/30 text-neon-green"
+            : "bg-white/[0.03] border-white/10 text-gray-400 hover:bg-white/[0.06] hover:border-white/20"
+          }`}
       >
         <span className={value ? "text-neon-green" : "text-gray-400"}>
           {selectedOption?.label || placeholder}
@@ -117,11 +116,10 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
       </button>
 
       <div
-        className={`absolute z-50 top-full left-0 right-0 mt-2 rounded-xl border border-white/10 bg-[#1a1a2e]/95 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden transition-all duration-300 origin-top ${
-          isOpen
-            ? "opacity-100 scale-y-100 translate-y-0"
-            : "opacity-0 scale-y-95 -translate-y-2 pointer-events-none"
-        }`}
+        className={`absolute z-50 top-full left-0 right-0 mt-2 rounded-xl border border-white/10 bg-[#1a1a2e]/95 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden transition-all duration-300 origin-top ${isOpen
+          ? "opacity-100 scale-y-100 translate-y-0"
+          : "opacity-0 scale-y-95 -translate-y-2 pointer-events-none"
+          }`}
       >
         <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent py-1">
           {options.map((option) => (
@@ -132,11 +130,10 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center justify-between ${
-                value === option.value
-                  ? "bg-neon-green/10 text-neon-green"
-                  : "text-gray-300 hover:bg-white/[0.06] hover:text-white"
-              }`}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center justify-between ${value === option.value
+                ? "bg-neon-green/10 text-neon-green"
+                : "text-gray-300 hover:bg-white/[0.06] hover:text-white"
+                }`}
             >
               <span>{option.label}</span>
               {value === option.value && (
@@ -195,7 +192,7 @@ const FilterBar = ({
   ).length;
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-6 z-50">
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-neon-green/[0.03] via-transparent to-neon-blue/[0.03] pointer-events-none" />
       <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-4">
         <div className="flex items-center gap-2 mb-4">
@@ -272,11 +269,10 @@ const FilterBar = ({
           <button
             onClick={onReset}
             disabled={!hasActiveFilters}
-            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-              hasActiveFilters
-                ? "bg-white/[0.06] border border-white/10 text-gray-300 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 active:scale-95"
-                : "bg-white/[0.02] border border-white/[0.05] text-gray-600 cursor-not-allowed"
-            }`}
+            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${hasActiveFilters
+              ? "bg-white/[0.06] border border-white/10 text-gray-300 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 active:scale-95"
+              : "bg-white/[0.02] border border-white/[0.05] text-gray-600 cursor-not-allowed"
+              }`}
           >
             <ResetIcon />
             <span>Reset</span>

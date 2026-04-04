@@ -242,7 +242,7 @@ const Dashboard = () => {
           onRefresh={refresh}
         />
         <div className="animate-pulse space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="glass-card p-6">
                 <div className="h-12 w-12 bg-white/10 rounded-xl mb-4" />
@@ -251,7 +251,7 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="lg:col-span-2 glass-card p-6">
               <div className="h-64 bg-white/5 rounded-xl" />
             </div>
@@ -272,13 +272,13 @@ const Dashboard = () => {
         onRefresh={refresh}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {statCards.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <RevenueChart
             chartData={chartData}

@@ -6,6 +6,8 @@ import Input from '../../components/common/Input'
 import Loader from '../../components/common/Loader'
 import projectService from '../../services/projectService'
 import clientService from '../../services/clientService'
+import useFormValidation from '../../hooks/useFormValidation'
+import { projectSchema } from '../../validations'
 
 const ProjectForm = () => {
     const navigate = useNavigate()
@@ -18,28 +20,40 @@ const ProjectForm = () => {
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [clients, setClients] = useState([])
-    const [formData, setFormData] = useState({
-        projectName: '',
-        description: '',
-        client: clientIdFromUrl || '',
-        projectType: 'website',
-        status: 'planning',
-        priority: 'medium',
-        startDate: new Date().toISOString().split('T')[0],
-        deadline: '',
-        budget: '',
-        amountPaid: '0',
-        progress: 0,
-        technologies: [],
-        features: [],
-        repositoryUrl: '',
-        liveUrl: '',
-        stagingUrl: '',
-        notes: ''
-    })
-    const [errors, setErrors] = useState({})
     const [newFeature, setNewFeature] = useState('')
     const [newTech, setNewTech] = useState('')
+
+    const {
+        values: formData,
+        errors,
+        handleChange,
+        handleBlur,
+        setValues,
+        setFieldValue,
+        validate,
+        isSubmitDisabled,
+    } = useFormValidation(
+        {
+            projectName: '',
+            description: '',
+            client: clientIdFromUrl || '',
+            projectType: 'website',
+            status: 'planning',
+            priority: 'medium',
+            startDate: new Date().toISOString().split('T')[0],
+            deadline: '',
+            budget: '',
+            amountPaid: '0',
+            progress: 0,
+            technologies: [],
+            features: [],
+            repositoryUrl: '',
+            liveUrl: '',
+            stagingUrl: '',
+            notes: '',
+        },
+        projectSchema
+    )
 
     useEffect(() => {
         fetchClients()
@@ -62,7 +76,7 @@ const ProjectForm = () => {
             setLoading(true)
             const response = await projectService.getProject(id)
             const project = response.data
-            setFormData({
+            setValues({
                 projectName: project.projectName || '',
                 description: project.description || '',
                 client: project.client?._id || '',
@@ -79,7 +93,7 @@ const ProjectForm = () => {
                 repositoryUrl: project.repositoryUrl || '',
                 liveUrl: project.liveUrl || '',
                 stagingUrl: project.stagingUrl || '',
-                notes: project.notes || ''
+                notes: project.notes || '',
             })
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch project')
@@ -88,86 +102,43 @@ const ProjectForm = () => {
         }
     }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }))
-        }
-    }
-
     const handleAddFeature = () => {
         if (newFeature.trim()) {
-            setFormData(prev => ({
-                ...prev,
-                features: [...prev.features, { name: newFeature.trim(), status: 'pending' }]
-            }))
+            setFieldValue('features', [
+                ...formData.features,
+                { name: newFeature.trim(), status: 'pending' },
+            ])
             setNewFeature('')
         }
     }
 
     const handleRemoveFeature = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            features: prev.features.filter((_, i) => i !== index)
-        }))
+        setFieldValue(
+            'features',
+            formData.features.filter((_, i) => i !== index)
+        )
     }
 
     const handleAddTech = () => {
         if (newTech.trim() && !formData.technologies.includes(newTech.trim())) {
-            setFormData(prev => ({
-                ...prev,
-                technologies: [...prev.technologies, newTech.trim()]
-            }))
+            setFieldValue('technologies', [...formData.technologies, newTech.trim()])
             setNewTech('')
         }
     }
 
     const handleRemoveTech = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            technologies: prev.technologies.filter((_, i) => i !== index)
-        }))
-    }
-
-    const validateForm = () => {
-        const newErrors = {}
-
-        if (!formData.projectName.trim()) {
-            newErrors.projectName = 'Project name is required'
-        }
-
-        if (!formData.client) {
-            newErrors.client = 'Client is required'
-        }
-
-        if (!formData.startDate) {
-            newErrors.startDate = 'Start date is required'
-        }
-
-        if (!formData.deadline) {
-            newErrors.deadline = 'Deadline is required'
-        } else if (new Date(formData.deadline) <= new Date(formData.startDate)) {
-            newErrors.deadline = 'Deadline must be after start date'
-        }
-
-        if (!formData.budget) {
-            newErrors.budget = 'Budget is required'
-        } else if (isNaN(formData.budget) || Number(formData.budget) < 0) {
-            newErrors.budget = 'Budget must be a positive number'
-        }
-
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
+        setFieldValue(
+            'technologies',
+            formData.technologies.filter((_, i) => i !== index)
+        )
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
 
-        if (!validateForm()) {
-            return
-        }
+        const isValid = await validate()
+        if (!isValid) return
 
         try {
             setSubmitting(true)
@@ -175,7 +146,7 @@ const ProjectForm = () => {
                 ...formData,
                 budget: Number(formData.budget),
                 amountPaid: Number(formData.amountPaid) || 0,
-                progress: Number(formData.progress) || 0
+                progress: Number(formData.progress) || 0,
             }
 
             if (isEditMode) {
@@ -197,7 +168,7 @@ const ProjectForm = () => {
         { value: 'webapp', label: 'Web Application', icon: '💻' },
         { value: 'mobileapp', label: 'Mobile App', icon: '📱' },
         { value: 'ecommerce', label: 'E-commerce', icon: '🛒' },
-        { value: 'custom', label: 'Custom Project', icon: '⚙️' }
+        { value: 'custom', label: 'Custom Project', icon: '⚙️' },
     ]
 
     const statusOptions = [
@@ -208,14 +179,14 @@ const ProjectForm = () => {
         { value: 'review', label: 'Review' },
         { value: 'completed', label: 'Completed' },
         { value: 'on_hold', label: 'On Hold' },
-        { value: 'cancelled', label: 'Cancelled' }
+        { value: 'cancelled', label: 'Cancelled' },
     ]
 
     const priorityOptions = [
         { value: 'low', label: 'Low' },
         { value: 'medium', label: 'Medium' },
         { value: 'high', label: 'High' },
-        { value: 'urgent', label: 'Urgent' }
+        { value: 'urgent', label: 'Urgent' },
     ]
 
     if (loading) {
@@ -251,7 +222,7 @@ const ProjectForm = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
                 <Card title="Basic Information" className="mb-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
@@ -260,12 +231,13 @@ const ProjectForm = () => {
                                 name="projectName"
                                 value={formData.projectName}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="Enter project name"
                                 error={errors.projectName}
                                 required
                             />
                         </div>
-                        
+
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                                 Client <span className="text-neon-green">*</span>
@@ -274,6 +246,7 @@ const ProjectForm = () => {
                                 name="client"
                                 value={formData.client}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-neon-green/50 ${errors.client ? 'border-red-500' : 'border-white/10'}`}
                             >
                                 <option value="">Select Client</option>
@@ -328,6 +301,7 @@ const ProjectForm = () => {
                             type="date"
                             value={formData.startDate}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             error={errors.startDate}
                             required
                         />
@@ -337,6 +311,7 @@ const ProjectForm = () => {
                             type="date"
                             value={formData.deadline}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             error={errors.deadline}
                             required
                         />
@@ -346,6 +321,7 @@ const ProjectForm = () => {
                             type="number"
                             value={formData.budget}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder="Enter budget amount"
                             error={errors.budget}
                             required
@@ -356,7 +332,9 @@ const ProjectForm = () => {
                             type="number"
                             value={formData.amountPaid}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder="Enter amount paid"
+                            error={errors.amountPaid}
                         />
                     </div>
                 </Card>
@@ -423,11 +401,11 @@ const ProjectForm = () => {
                             Add
                         </Button>
                     </div>
-                    
+
                     {formData.features.length > 0 ? (
                         <div className="space-y-2">
                             {formData.features.map((feature, index) => (
-                                <div 
+                                <div
                                     key={index}
                                     className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5"
                                 >
@@ -462,11 +440,11 @@ const ProjectForm = () => {
                             Add
                         </Button>
                     </div>
-                    
+
                     {formData.technologies.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                             {formData.technologies.map((tech, index) => (
-                                <span 
+                                <span
                                     key={index}
                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neon-blue/20 text-neon-blue border border-neon-blue/30"
                                 >
@@ -495,21 +473,27 @@ const ProjectForm = () => {
                             name="repositoryUrl"
                             value={formData.repositoryUrl}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder="https://github.com/..."
+                            error={errors.repositoryUrl}
                         />
                         <Input
                             label="Live URL"
                             name="liveUrl"
                             value={formData.liveUrl}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder="https://..."
+                            error={errors.liveUrl}
                         />
                         <Input
                             label="Staging URL"
                             name="stagingUrl"
                             value={formData.stagingUrl}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder="https://staging..."
+                            error={errors.stagingUrl}
                         />
                     </div>
                 </Card>
@@ -529,9 +513,14 @@ const ProjectForm = () => {
                     <Button type="button" variant="ghost" onClick={() => navigate('/projects')}>
                         Cancel
                     </Button>
-                    <Button type="submit" variant="neon" loading={submitting}>
+                    <Button
+                        type="submit"
+                        variant="neon"
+                        loading={submitting}
+                        disabled={isSubmitDisabled(submitting)}
+                    >
                         {isEditMode ? 'Update Project' : 'Create Project'}
-                                    </Button>
+                    </Button>
                 </div>
             </form>
         </div>
