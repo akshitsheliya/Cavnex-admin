@@ -37,7 +37,7 @@ const ClientForm = () => {
       phone: "",
       alternatePhone: "",
       website: "",
-      gstNumber: "",
+      // gstNumber: "",
       address: {
         street: "",
         city: "",

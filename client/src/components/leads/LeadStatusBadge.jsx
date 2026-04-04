@@ -1,3 +1,4 @@
+// LeadStatusBadge.jsx
 import React from "react";
 
 const statusConfig = {
@@ -27,7 +28,7 @@ const statusConfig = {
     text: "text-cyan-400",
     border: "border-cyan-500/30",
     dot: "bg-cyan-400",
-    label: "Proposal Sent",
+    label: "Proposal",
   },
   negotiation: {
     bg: "bg-orange-500/20",
@@ -53,9 +54,18 @@ const statusConfig = {
 };
 
 const sizes = {
-  sm: { pill: "px-2 py-0.5 text-[10px]", dot: "w-1.5 h-1.5" },
-  md: { pill: "px-2.5 py-0.5 text-xs", dot: "w-1.5 h-1.5" },
-  lg: { pill: "px-3.5 py-1 text-sm", dot: "w-2 h-2" },
+  sm: {
+    pill: "px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px]",
+    dot: "w-1 h-1 sm:w-1.5 sm:h-1.5",
+  },
+  md: {
+    pill: "px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs",
+    dot: "w-1.5 h-1.5",
+  },
+  lg: {
+    pill: "px-2.5 sm:px-3.5 py-0.5 sm:py-1 text-xs sm:text-sm",
+    dot: "w-1.5 h-1.5 sm:w-2 sm:h-2",
+  },
 };
 
 const LeadStatusBadge = ({ status, size = "md" }) => {
@@ -65,7 +75,7 @@ const LeadStatusBadge = ({ status, size = "md" }) => {
   return (
     <span
       className={`
-        inline-flex items-center gap-1.5 rounded-full font-medium border
+        inline-flex items-center gap-1 sm:gap-1.5 rounded-full font-medium border
         whitespace-nowrap flex-shrink-0
         ${config.bg} ${config.text} ${config.border} ${sizeClass.pill}
       `}

@@ -1,167 +1,27 @@
+// LeadForm.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Form, Select, DatePicker, Input as AntInput, message } from "antd";
+import dayjs from "dayjs";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import PhoneInput from "../../components/common/PhoneInput";
 import Loader from "../../components/common/Loader";
 import leadService from "../../services/leadService";
-import useFormValidation from "../../hooks/useFormValidation";
-import { leadSchema } from "../../validations";
 
-/* ─── Reusable styled select ─────────────────────────────────────────────── */
-const StyledSelect = ({ label, name, value, onChange, options, required }) => (
-  <div className="mb-5">
-    {label && (
-      <label
-        htmlFor={name}
-        className="block text-sm font-medium text-gray-300 mb-2"
-      >
-        {label}
-        {required && <span className="text-neon-green ml-1">*</span>}
-      </label>
-    )}
-    <select
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white
-                 focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.07]
-                 focus:shadow-[0_0_20px_rgba(0,255,136,0.15)]
-                 transition-all duration-300 appearance-none cursor-pointer"
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-  </div>
-);
+const { TextArea } = AntInput;
+const { Option } = Select;
 
-/* ─── Reusable styled textarea ──────────────────────────────────────────── */
-const StyledTextarea = ({ label, name, value, onChange, placeholder, rows = 4 }) => (
-  <div className="mb-5">
-    {label && (
-      <label
-        htmlFor={name}
-        className="block text-sm font-medium text-gray-300 mb-2"
-      >
-        {label}
-      </label>
-    )}
-    <textarea
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      rows={rows}
-      placeholder={placeholder}
-      className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl
-                 text-white placeholder-gray-500
-                 focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.07]
-                 focus:shadow-[0_0_20px_rgba(0,255,136,0.15)]
-                 transition-all duration-300 resize-none"
-    />
-  </div>
-);
-
-/* ─── Main component ─────────────────────────────────────────────────────── */
 const LeadForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
+  const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  const {
-    values: formData,
-    errors,
-    handleChange,
-    handleBlur,
-    setValues,
-    validate,
-    isSubmitDisabled,
-  } = useFormValidation(
-    {
-      leadName: "",
-      businessName: "",
-      businessType: "",
-      phone: "",
-      email: "",
-      city: "",
-      source: "website",
-      status: "new",
-      estimatedValue: "",
-      notes: "",
-      followUpDate: "",
-    },
-    leadSchema
-  );
-
-  useEffect(() => {
-    if (isEditMode) {
-      fetchLead();
-    }
-  }, [id]);
-
-  const fetchLead = async () => {
-    try {
-      setLoading(true);
-      const response = await leadService.getLead(id);
-      const lead = response.data;
-      setValues({
-        leadName: lead.leadName || "",
-        businessName: lead.businessName || "",
-        businessType: lead.businessType || "",
-        phone: lead.phone || "",
-        email: lead.email || "",
-        city: lead.city || "",
-        source: lead.source || "website",
-        status: lead.status || "new",
-        estimatedValue: lead.estimatedValue || "",
-        notes: lead.notes || "",
-        followUpDate: lead.followUpDate ? lead.followUpDate.split("T")[0] : "",
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch lead");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    const isValid = await validate();
-    if (!isValid) return;
-
-    try {
-      setSubmitting(true);
-      const dataToSubmit = {
-        ...formData,
-        estimatedValue: formData.estimatedValue
-          ? Number(formData.estimatedValue)
-          : 0,
-      };
-
-      if (isEditMode) {
-        await leadService.updateLead(id, dataToSubmit);
-      } else {
-        await leadService.createLead(dataToSubmit);
-      }
-
-      navigate("/leads");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to save lead");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const sourceOptions = [
     { value: "website", label: "Website" },
@@ -184,17 +44,78 @@ const LeadForm = () => {
     { value: "closed_lost", label: "Closed Lost" },
   ];
 
+  useEffect(() => {
+    if (isEditMode) {
+      fetchLead();
+    }
+  }, [id]);
+
+  const fetchLead = async () => {
+    try {
+      setLoading(true);
+      const response = await leadService.getLead(id);
+      const lead = response.data;
+      form.setFieldsValue({
+        leadName: lead.leadName || "",
+        businessName: lead.businessName || "",
+        businessType: lead.businessType || "",
+        phone: lead.phone || "",
+        email: lead.email || "",
+        city: lead.city || "",
+        source: lead.source || "website",
+        status: lead.status || "new",
+        estimatedValue: lead.estimatedValue || "",
+        notes: lead.notes || "",
+        followUpDate: lead.followUpDate ? dayjs(lead.followUpDate) : null,
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch lead");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (values) => {
+    setError("");
+    try {
+      setSubmitting(true);
+      const dataToSubmit = {
+        ...values,
+        estimatedValue: values.estimatedValue
+          ? Number(values.estimatedValue)
+          : 0,
+        followUpDate: values.followUpDate
+          ? values.followUpDate.toISOString()
+          : null,
+      };
+
+      if (isEditMode) {
+        await leadService.updateLead(id, dataToSubmit);
+        message.success("Lead updated successfully");
+      } else {
+        await leadService.createLead(dataToSubmit);
+        message.success("Lead created successfully");
+      }
+
+      navigate("/leads");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save lead");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <Loader />;
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-0 sm:px-0">
+    <div className="max-w-4xl mx-auto px-2 sm:px-0">
       {/* Back navigation & heading */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <button
           onClick={() => navigate("/leads")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4 group"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-3 sm:mb-4 group"
         >
           <svg
             className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
@@ -211,10 +132,10 @@ const LeadForm = () => {
           </svg>
           <span className="text-sm">Back to Leads</span>
         </button>
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
           {isEditMode ? "Edit Lead" : "Add New Lead"}
         </h1>
-        <p className="text-gray-400 mt-1 text-sm sm:text-base">
+        <p className="text-gray-400 mt-1 text-xs sm:text-sm lg:text-base">
           {isEditMode
             ? "Update lead information"
             : "Fill in the lead details below"}
@@ -223,9 +144,9 @@ const LeadForm = () => {
 
       {/* Error Alert */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3">
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2 sm:gap-3">
           <svg
-            className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0 mt-0.5"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -235,117 +156,207 @@ const LeadForm = () => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-red-400 text-sm leading-relaxed">{error}</p>
+          <p className="text-red-400 text-xs sm:text-sm leading-relaxed">
+            {error}
+          </p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={{
+          source: "website",
+          status: "new",
+        }}
+        className="lead-form"
+      >
         {/* Contact Information Card */}
-        <Card title="Contact Information" className="mb-5 sm:mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
-            <Input
-              label="Lead Name"
+        <Card title="Contact Information" className="mb-4 sm:mb-5 lg:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4">
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Lead Name <span className="text-neon-green">*</span>
+                </span>
+              }
               name="leadName"
-              value={formData.leadName}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Enter lead name"
-              error={errors.leadName}
-              required
-            />
-            <Input
-              label="Business Name"
+              rules={[{ required: true, message: "Please enter lead name" }]}
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter lead name"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">Business Name</span>
+              }
               name="businessName"
-              value={formData.businessName}
-              onChange={handleChange}
-              placeholder="Enter business name"
-            />
-            <Input
-              label="Business Type"
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter business name"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">Business Type</span>
+              }
               name="businessType"
-              value={formData.businessType}
-              onChange={handleChange}
-              placeholder="e.g., E-commerce, SaaS, etc."
-            />
-            <PhoneInput
-              label="Phone Number"
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="e.g., E-commerce, SaaS, etc."
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Phone Number <span className="text-neon-green">*</span>
+                </span>
+              }
               name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.phone}
-              required
-            />
-            <Input
-              label="Email Address"
+              rules={[{ required: true, message: "Please enter phone number" }]}
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter phone number"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Email Address <span className="text-neon-green">*</span>
+                </span>
+              }
               name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Enter email address"
-              error={errors.email}
-              required
-            />
-            <Input
-              label="City"
+              rules={[
+                { required: true, message: "Please enter email" },
+                { type: "email", message: "Please enter a valid email" },
+              ]}
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter email address"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-gray-300 text-sm">City</span>}
               name="city"
-              value={formData.city}
-              onChange={handleChange}
-              placeholder="Enter city"
-            />
+              className="mb-0"
+            >
+              <AntInput
+                placeholder="Enter city"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
           </div>
         </Card>
 
         {/* Lead Details Card */}
-        <Card title="Lead Details" className="mb-5 sm:mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
-            <StyledSelect
-              label="Lead Source"
+        <Card title="Lead Details" className="mb-4 sm:mb-5 lg:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4">
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Lead Source <span className="text-neon-green">*</span>
+                </span>
+              }
               name="source"
-              value={formData.source}
-              onChange={handleChange}
-              options={sourceOptions}
-              required
-            />
-            <StyledSelect
-              label="Status"
+              className="mb-0"
+            >
+              <Select
+                placeholder="Select source"
+                className="custom-select w-full h-10 sm:h-11"
+                dropdownClassName="custom-dropdown"
+                popupClassName="custom-dropdown"
+              >
+                {sourceOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-gray-300 text-sm">Status</span>}
               name="status"
-              value={formData.status}
-              onChange={handleChange}
-              options={statusOptions}
-            />
-            <Input
-              label="Estimated Value (₹)"
+              className="mb-0"
+            >
+              <Select
+                placeholder="Select status"
+                className="custom-select w-full h-10 sm:h-11"
+                dropdownClassName="custom-dropdown"
+                popupClassName="custom-dropdown"
+              >
+                {statusOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">
+                  Estimated Value (₹)
+                </span>
+              }
               name="estimatedValue"
-              type="number"
-              value={formData.estimatedValue}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Enter estimated value"
-              error={errors.estimatedValue}
-            />
-            <Input
-              label="Follow-up Date"
+              className="mb-0"
+            >
+              <AntInput
+                type="number"
+                placeholder="Enter estimated value"
+                className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="text-gray-300 text-sm">Follow-up Date</span>
+              }
               name="followUpDate"
-              type="date"
-              value={formData.followUpDate}
-              onChange={handleChange}
-            />
+              className="mb-0"
+            >
+              <DatePicker
+                placeholder="Select date"
+                className="custom-datepicker w-full h-10 sm:h-11 bg-white/5 border-white/10 text-white rounded-xl"
+                format="DD/MM/YYYY"
+                popupClassName="custom-datepicker-dropdown"
+              />
+            </Form.Item>
           </div>
 
-          <StyledTextarea
-            label="Notes"
+          <Form.Item
+            label={<span className="text-gray-300 text-sm">Notes</span>}
             name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            placeholder="Add any additional notes about this lead..."
-            rows={4}
-          />
+            className="mb-0 mt-3 sm:mt-4"
+          >
+            <TextArea
+              rows={4}
+              placeholder="Add any additional notes about this lead..."
+              className="custom-textarea bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50 resize-none"
+            />
+          </Form.Item>
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
           <Button
             type="button"
             variant="ghost"
@@ -358,13 +369,107 @@ const LeadForm = () => {
             type="submit"
             variant="neon"
             loading={submitting}
-            disabled={isSubmitDisabled(submitting)}
+            disabled={submitting}
             className="w-full sm:w-auto"
           >
             {isEditMode ? "Update Lead" : "Create Lead"}
           </Button>
         </div>
-      </form>
+      </Form>
+
+      <style jsx global>{`
+        .lead-form .ant-form-item-label > label {
+          color: #d1d5db;
+          font-size: 0.875rem;
+        }
+        .lead-form .ant-input,
+        .lead-form .ant-input-number,
+        .lead-form .ant-picker {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          color: white !important;
+        }
+        .lead-form .ant-input:hover,
+        .lead-form .ant-input:focus,
+        .lead-form .ant-picker:hover,
+        .lead-form .ant-picker-focused {
+          border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+        .lead-form .ant-input::placeholder {
+          color: #6b7280 !important;
+        }
+        .lead-form .ant-select-selector {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+          height: 2.75rem !important;
+          padding: 0 1rem !important;
+        }
+        .lead-form .ant-select-selection-item,
+        .lead-form .ant-select-selection-placeholder {
+          line-height: 2.75rem !important;
+          color: white !important;
+        }
+        .lead-form .ant-select-selection-placeholder {
+          color: #6b7280 !important;
+        }
+        .lead-form .ant-select:hover .ant-select-selector,
+        .lead-form .ant-select-focused .ant-select-selector {
+          border-color: rgba(0, 255, 136, 0.5) !important;
+        }
+        .lead-form .ant-select-arrow {
+          color: #9ca3af !important;
+        }
+        .lead-form .ant-picker-input > input {
+          color: white !important;
+        }
+        .lead-form .ant-picker-input > input::placeholder {
+          color: #6b7280 !important;
+        }
+        .lead-form .ant-picker-suffix,
+        .lead-form .ant-picker-clear {
+          color: #9ca3af !important;
+        }
+        .custom-dropdown {
+          background: #1a1a2e !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 0.75rem !important;
+        }
+        .custom-dropdown .ant-select-item {
+          color: white !important;
+        }
+        .custom-dropdown .ant-select-item-option-active,
+        .custom-dropdown .ant-select-item-option-selected {
+          background: rgba(0, 255, 136, 0.1) !important;
+        }
+        .custom-datepicker-dropdown {
+          background: #1a1a2e !important;
+        }
+        .custom-datepicker-dropdown .ant-picker-panel {
+          background: #1a1a2e !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .custom-datepicker-dropdown .ant-picker-header,
+        .custom-datepicker-dropdown .ant-picker-content th,
+        .custom-datepicker-dropdown .ant-picker-cell {
+          color: white !important;
+        }
+        .custom-datepicker-dropdown
+          .ant-picker-cell-in-view.ant-picker-cell-selected
+          .ant-picker-cell-inner {
+          background: #00ff88 !important;
+          color: #000 !important;
+        }
+        @media (max-width: 640px) {
+          .lead-form .ant-select-selector {
+            height: 2.5rem !important;
+          }
+          .lead-form .ant-select-selection-item,
+          .lead-form .ant-select-selection-placeholder {
+            line-height: 2.5rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
