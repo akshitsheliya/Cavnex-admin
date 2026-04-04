@@ -1,136 +1,19 @@
-// import React from "react";
-
-// const ChartCard = ({
-//   title,
-//   subtitle,
-//   data = [],
-//   type = "bar",
-//   period = "6months",
-//   onPeriodChange,
-// }) => {
-//   const defaultData = [65, 45, 75, 50, 85, 60, 90, 70, 95, 80, 88, 92];
-//   const months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
-
-//   const chartData = data.length > 0 ? data : defaultData;
-//   const maxValue = Math.max(...chartData, 1);
-
-//   return (
-//     <div>
-//       <div className="flex items-center justify-between mb-6">
-//         <div>
-//           <h3 className="text-lg font-semibold text-white">{title}</h3>
-//           {subtitle && <p className="text-sm text-gray-400">{subtitle}</p>}
-//         </div>
-//         <select
-//           value={period}
-//           onChange={(e) => onPeriodChange && onPeriodChange(e.target.value)}
-//           className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-neon-green/50 cursor-pointer"
-//         >
-//           <option value="6months">Last 6 Months</option>
-//           <option value="year">This Year</option>
-//           <option value="all">All Time</option>
-//         </select>
-//       </div>
-
-//       {type === "bar" && (
-//         <div className="h-64 flex items-end justify-between gap-2 px-4">
-//           {chartData.map((value, i) => {
-//             const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
-//             return (
-//               <div
-//                 key={i}
-//                 className="flex-1 flex flex-col items-center gap-2 group"
-//               >
-//                 <div className="relative w-full">
-//                   <div
-//                     className="w-full bg-gradient-to-t from-neon-green/50 to-neon-blue/50 rounded-t-lg transition-all duration-500 hover:from-neon-green hover:to-neon-blue cursor-pointer group-hover:shadow-[0_0_20px_rgba(0,255,136,0.3)]"
-//                     style={{ height: `${Math.max(height * 2.5, 4)}px` }}
-//                   />
-//                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-dark-600 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-//                     {value}%
-//                   </div>
-//                 </div>
-//                 <span className="text-xs text-gray-500">{months[i]}</span>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
-
-//       {type === "line" && (
-//         <div className="h-64 relative">
-//           <svg className="w-full h-full" viewBox="0 0 400 200">
-//             <defs>
-//               <linearGradient
-//                 id="lineGradient"
-//                 x1="0%"
-//                 y1="0%"
-//                 x2="100%"
-//                 y2="0%"
-//               >
-//                 <stop offset="0%" stopColor="#00ff88" />
-//                 <stop offset="100%" stopColor="#00d4ff" />
-//               </linearGradient>
-//               <linearGradient
-//                 id="areaGradient"
-//                 x1="0%"
-//                 y1="0%"
-//                 x2="0%"
-//                 y2="100%"
-//               >
-//                 <stop offset="0%" stopColor="rgba(0,255,136,0.3)" />
-//                 <stop offset="100%" stopColor="rgba(0,255,136,0)" />
-//               </linearGradient>
-//             </defs>
-
-//             <path
-//               d={`M 0 ${200 - chartData[0] * 2} ${chartData.map((d, i) => `L ${(i * 400) / (chartData.length - 1)} ${200 - d * 2}`).join(" ")} L 400 200 L 0 200 Z`}
-//               fill="url(#areaGradient)"
-//             />
-
-//             <path
-//               d={`M 0 ${200 - chartData[0] * 2} ${chartData.map((d, i) => `L ${(i * 400) / (chartData.length - 1)} ${200 - d * 2}`).join(" ")}`}
-//               fill="none"
-//               stroke="url(#lineGradient)"
-//               strokeWidth="3"
-//               strokeLinecap="round"
-//             />
-
-//             {chartData.map((d, i) => (
-//               <circle
-//                 key={i}
-//                 cx={(i * 400) / (chartData.length - 1)}
-//                 cy={200 - d * 2}
-//                 r="5"
-//                 fill="#000"
-//                 stroke="url(#lineGradient)"
-//                 strokeWidth="2"
-//                 className="cursor-pointer hover:r-8 transition-all"
-//               />
-//             ))}
-//           </svg>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default ChartCard;
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Modal from "../common/Modal";
 
-const ChartCard = ({
+const ChartCardGraph = ({
   title,
   subtitle,
   data = [],
-  type = "bar",
   period = "year",
   onPeriodChange,
-  revenueData = {}, // { monthly: [], yearly: [], projects: [] }
+  revenueData = {},
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const svgRef = useRef(null);
 
   const months = [
     "Jan",
@@ -146,22 +29,6 @@ const ChartCard = ({
     "Nov",
     "Dec",
   ];
-  const shortMonths = [
-    "J",
-    "F",
-    "M",
-    "A",
-    "M",
-    "J",
-    "J",
-    "A",
-    "S",
-    "O",
-    "N",
-    "D",
-  ];
-
-  // Get current year
   const currentYear = new Date().getFullYear();
 
   // Process data based on period
@@ -222,7 +89,58 @@ const ChartCard = ({
     }).format(amount || 0);
   };
 
-  const handleBarClick = (item, index) => {
+  // SVG dimensions
+  const width = 100;
+  const height = 50;
+  const padding = { top: 5, right: 5, bottom: 8, left: 5 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  // Generate path
+  const getPath = () => {
+    if (chartData.length === 0) return "";
+
+    const points = chartData.map((d, i) => {
+      const x = padding.left + (i / (chartData.length - 1 || 1)) * chartWidth;
+      const value = d.total || d.value || 0;
+      const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
+      return { x, y };
+    });
+
+    const linePath = points
+      .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+      .join(" ");
+
+    return linePath;
+  };
+
+  const getAreaPath = () => {
+    if (chartData.length === 0) return "";
+
+    const points = chartData.map((d, i) => {
+      const x = padding.left + (i / (chartData.length - 1 || 1)) * chartWidth;
+      const value = d.total || d.value || 0;
+      const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
+      return { x, y };
+    });
+
+    const linePath = points
+      .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+      .join(" ");
+
+    const areaPath = `${linePath} L ${padding.left + chartWidth} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`;
+
+    return areaPath;
+  };
+
+  const getPointPosition = (index) => {
+    const x = padding.left + (index / (chartData.length - 1 || 1)) * chartWidth;
+    const value = chartData[index]?.total || chartData[index]?.value || 0;
+    const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
+    return { x, y };
+  };
+
+  const handlePointClick = (item, index) => {
     setSelectedData({
       ...item,
       index,
@@ -236,11 +154,10 @@ const ChartCard = ({
     setShowModal(true);
   };
 
-  const getBarLabel = (item, index) => {
+  const getLabel = (item, index) => {
     if (period === "all") return item.year;
-    if (period === "6months")
-      return item.month?.substring(0, 3) || shortMonths[item.monthIndex];
-    return shortMonths[index];
+    if (period === "6months") return item.month?.substring(0, 1);
+    return months[index]?.substring(0, 1);
   };
 
   // Calculate totals
@@ -295,7 +212,7 @@ const ChartCard = ({
         </div>
       </div>
 
-      {/* Bar Chart */}
+      {/* Line Graph */}
       {chartData.length === 0 ? (
         <div className="h-64 flex items-center justify-center">
           <div className="text-center">
@@ -309,84 +226,185 @@ const ChartCard = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="1.5"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
               />
             </svg>
             <p className="text-gray-400">No revenue data available</p>
             <p className="text-gray-500 text-sm mt-1">
-              Complete projects to see revenue
+              Complete projects to see trends
             </p>
           </div>
         </div>
       ) : (
-        <div className="h-64 flex items-end justify-between gap-1 sm:gap-2 px-2">
-          {chartData.map((item, i) => {
-            const value = item.total || item.value || 0;
-            const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
-            const hasData = value > 0;
-
-            return (
-              <div
-                key={i}
-                className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
-                onClick={() => handleBarClick(item, i)}
+        <div className="relative h-64">
+          <svg
+            ref={svgRef}
+            className="w-full h-full"
+            viewBox={`0 0 ${width} ${height}`}
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient
+                id="lineGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
               >
-                <div className="relative w-full flex justify-center">
-                  {/* Bar */}
-                  <div
-                    className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 ${
-                      hasData
-                        ? "bg-gradient-to-t from-neon-green/60 to-neon-blue/60 hover:from-neon-green hover:to-neon-blue group-hover:shadow-[0_0_20px_rgba(0,255,136,0.4)]"
-                        : "bg-white/10"
-                    }`}
-                    style={{ height: `${Math.max(height * 2, 8)}px` }}
+                <stop offset="0%" stopColor="#00ff88" />
+                <stop offset="100%" stopColor="#00d4ff" />
+              </linearGradient>
+              <linearGradient
+                id="areaGradient"
+                x1="0%"
+                y1="0%"
+                x2="0%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="rgba(0,255,136,0.3)" />
+                <stop offset="100%" stopColor="rgba(0,255,136,0)" />
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="1" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Grid Lines */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => (
+              <line
+                key={i}
+                x1={padding.left}
+                y1={padding.top + chartHeight * (1 - ratio)}
+                x2={padding.left + chartWidth}
+                y2={padding.top + chartHeight * (1 - ratio)}
+                stroke="rgba(255,255,255,0.05)"
+                strokeWidth="0.1"
+              />
+            ))}
+
+            {/* Area under line */}
+            <path d={getAreaPath()} fill="url(#areaGradient)" />
+
+            {/* Main line */}
+            <path
+              d={getPath()}
+              fill="none"
+              stroke="url(#lineGradient)"
+              strokeWidth="0.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#glow)"
+            />
+
+            {/* Data points */}
+            {chartData.map((item, i) => {
+              const { x, y } = getPointPosition(i);
+              const value = item.total || item.value || 0;
+              const hasData = value > 0;
+
+              return (
+                <g key={i}>
+                  {/* Invisible larger hit area */}
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r="3"
+                    fill="transparent"
+                    className="cursor-pointer"
+                    onClick={() => handlePointClick(item, i)}
+                    onMouseEnter={() => setHoveredIndex(i)}
+                    onMouseLeave={() => setHoveredIndex(null)}
                   />
-
-                  {/* Tooltip on hover */}
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 px-3 py-2 bg-dark-600 border border-white/10 rounded-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                    <p className="font-semibold text-neon-green">
-                      {formatCurrency(value)}
-                    </p>
-                    <p className="text-gray-400">
-                      {item.projectCount || 0} projects
-                    </p>
-                    {item.paid > 0 && (
-                      <p className="text-green-400">
-                        Paid: {formatCurrency(item.paid)}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Click indicator */}
-                  {hasData && (
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-neon-green rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+                  {/* Visible point */}
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={hoveredIndex === i ? "1.5" : "1"}
+                    fill={hasData ? "#000" : "rgba(255,255,255,0.2)"}
+                    stroke={
+                      hasData ? "url(#lineGradient)" : "rgba(255,255,255,0.3)"
+                    }
+                    strokeWidth="0.3"
+                    className="transition-all duration-200 cursor-pointer"
+                    onClick={() => handlePointClick(item, i)}
+                  />
+                  {/* Glow on hover */}
+                  {hoveredIndex === i && hasData && (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="2.5"
+                      fill="none"
+                      stroke="#00ff88"
+                      strokeWidth="0.2"
+                      opacity="0.5"
+                      className="animate-ping"
+                    />
                   )}
-                </div>
+                </g>
+              );
+            })}
+          </svg>
 
-                {/* Label */}
-                <span className="text-xs text-gray-500 group-hover:text-white transition-colors">
-                  {getBarLabel(item, i)}
-                </span>
-              </div>
-            );
-          })}
+          {/* X-axis labels */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
+            {chartData.map((item, i) => (
+              <span
+                key={i}
+                className={`text-xs transition-colors cursor-pointer ${
+                  hoveredIndex === i ? "text-neon-green" : "text-gray-500"
+                }`}
+                onClick={() => handlePointClick(item, i)}
+              >
+                {getLabel(item, i)}
+              </span>
+            ))}
+          </div>
+
+          {/* Hover Tooltip */}
+          {hoveredIndex !== null && chartData[hoveredIndex] && (
+            <div
+              className="absolute bg-dark-600 border border-white/10 rounded-lg px-3 py-2 text-xs pointer-events-none z-10 transform -translate-x-1/2"
+              style={{
+                left: `${(hoveredIndex / (chartData.length - 1 || 1)) * 100}%`,
+                top: "20px",
+              }}
+            >
+              <p className="font-semibold text-neon-green">
+                {formatCurrency(
+                  chartData[hoveredIndex].total ||
+                    chartData[hoveredIndex].value ||
+                    0
+                )}
+              </p>
+              <p className="text-gray-400">
+                {chartData[hoveredIndex].projectCount || 0} projects
+              </p>
+              {chartData[hoveredIndex].paid > 0 && (
+                <p className="text-green-400">
+                  Paid: {formatCurrency(chartData[hoveredIndex].paid)}
+                </p>
+              )}
+              <p className="text-gray-500 mt-1">Click for details</p>
+            </div>
+          )}
         </div>
       )}
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-white/5">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-neon-green to-neon-blue" />
-          <span className="text-xs text-gray-400">Revenue</span>
+          <div className="w-6 h-0.5 bg-gradient-to-r from-neon-green to-neon-blue rounded" />
+          <span className="text-xs text-gray-400">Revenue Trend</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="text-xs text-gray-400">Received</span>
-        </div>
-        <p className="text-xs text-gray-500">Click bar for details</p>
+        <p className="text-xs text-gray-500">Click point for details</p>
       </div>
 
-      {/* Detail Modal */}
+      {/* Detail Modal - Same as bar chart */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -475,11 +493,10 @@ const ChartCard = ({
                           </p>
                         </div>
                       </div>
-                      {/* Payment Progress */}
                       <div className="mt-2">
                         <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-neon-green to-neon-blue rounded-full transition-all"
+                            className="h-full bg-gradient-to-r from-neon-green to-neon-blue rounded-full"
                             style={{
                               width: `${Math.min(((project.amountPaid || 0) / (project.budget || 1)) * 100, 100)}%`,
                             }}
@@ -509,4 +526,4 @@ const ChartCard = ({
   );
 };
 
-export default ChartCard;
+export default ChartCardGraph;
