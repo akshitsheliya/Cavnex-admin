@@ -9,6 +9,37 @@ import clientService from "../../services/clientService";
 import useFormValidation from "../../hooks/useFormValidation";
 import { clientSchema } from "../../validations";
 
+const SelectField = ({ label, name, value, onChange, options, placeholder, required }) => (
+  <div className="mb-5">
+    <label className="block text-sm font-medium text-gray-300 mb-2">
+      {label}
+      {required && <span className="text-neon-green ml-1">*</span>}
+    </label>
+    <select
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.07] focus:shadow-[0_0_20px_rgba(0,255,136,0.15)] transition-all duration-300 appearance-none"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 14px center',
+        paddingRight: '40px',
+      }}
+    >
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((option) => (
+        <option
+          key={typeof option === 'string' ? option : option.value}
+          value={typeof option === 'string' ? option : option.value}
+        >
+          {typeof option === 'string' ? option : option.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
 const ClientForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -166,14 +197,14 @@ const ClientForm = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
+    <div className="max-w-4xl mx-auto px-0 sm:px-0">
+      <div className="mb-4 sm:mb-6">
         <button
           onClick={() => navigate("/clients")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-3 sm:mb-4"
         >
           <svg
-            className="w-5 h-5"
+            className="w-5 h-5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -185,12 +216,12 @@ const ClientForm = () => {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          Back to Clients
+          <span className="text-sm sm:text-base">Back to Clients</span>
         </button>
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">
           {isEditMode ? "Edit Client" : "Add New Client"}
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-gray-400 mt-1 text-sm sm:text-base">
           {isEditMode
             ? "Update client information"
             : "Fill in the client details below"}
@@ -198,9 +229,9 @@ const ClientForm = () => {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start sm:items-center gap-3">
           <svg
-            className="w-5 h-5 text-red-400 flex-shrink-0"
+            className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5 sm:mt-0"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -210,13 +241,13 @@ const ClientForm = () => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400 text-sm sm:text-base break-words min-w-0">{error}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} noValidate>
-        <Card title="Basic Information" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card title="Basic Information" className="mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
             <Input
               label="Contact Person Name"
               name="clientName"
@@ -237,24 +268,14 @@ const ClientForm = () => {
               error={errors.businessName}
               required
             />
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Industry
-              </label>
-              <select
-                name="industry"
-                value={formData.industry}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-              >
-                <option value="">Select Industry</option>
-                {industryOptions.map((industry) => (
-                  <option key={industry} value={industry}>
-                    {industry}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              label="Industry"
+              name="industry"
+              value={formData.industry}
+              onChange={handleChange}
+              options={industryOptions}
+              placeholder="Select Industry"
+            />
             <Input
               label="Website"
               name="website"
@@ -267,8 +288,8 @@ const ClientForm = () => {
           </div>
         </Card>
 
-        <Card title="Contact Details" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card title="Contact Details" className="mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
             <Input
               label="Email Address"
               name="email"
@@ -310,9 +331,9 @@ const ClientForm = () => {
           </div>
         </Card>
 
-        <Card title="Address" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+        <Card title="Address" className="mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
+            <div className="sm:col-span-2">
               <Input
                 label="Street Address"
                 name="address.street"
@@ -354,8 +375,8 @@ const ClientForm = () => {
           </div>
         </Card>
 
-        <Card title="Additional Contact Person" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card title="Additional Contact Person" className="mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
             <Input
               label="Name"
               name="contactPerson.name"
@@ -396,45 +417,25 @@ const ClientForm = () => {
           </div>
         </Card>
 
-        <Card title="Other Details" className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Source
-              </label>
-              <select
-                name="source"
-                value={formData.source}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-              >
-                {sourceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <Card title="Other Details" className="mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
+            <SelectField
+              label="Source"
+              name="source"
+              value={formData.source}
+              onChange={handleChange}
+              options={sourceOptions}
+            />
+            <SelectField
+              label="Status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              options={statusOptions}
+            />
           </div>
 
-          <div className="mt-4">
+          <div className="mt-0">
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Notes
             </label>
@@ -444,12 +445,12 @@ const ClientForm = () => {
               onChange={handleChange}
               rows={4}
               placeholder="Add any additional notes about this client..."
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50 resize-none"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.07] focus:shadow-[0_0_20px_rgba(0,255,136,0.15)] transition-all duration-300 resize-none"
             />
           </div>
         </Card>
 
-        <div className="flex items-center justify-end gap-4">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pb-6">
           <Button
             type="button"
             variant="ghost"

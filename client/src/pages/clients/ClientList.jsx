@@ -124,7 +124,7 @@ const ClientList = () => {
   const hasFilters = filters.search || filters.status || filters.industry;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Clients"
         subtitle="Manage your client relationships"
@@ -145,13 +145,14 @@ const ClientList = () => {
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Add Client
+          <span className="hidden sm:inline">Add Client</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </PageHeader>
       <ErrorAlert message={error} onClose={() => setError("")} />
       <StatCards stats={statCards} loading={statsLoading} columns={4} />
-      <div className="flex items-start gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+        <div className="flex-1 min-w-0">
           <FilterBar
             searchPlaceholder="Search clients..."
             filters={filters}
@@ -160,7 +161,7 @@ const ClientList = () => {
             filterConfig={clientFilterConfig}
           />
         </div>
-        <div className="flex items-center gap-1 mt-[52px] p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] self-start lg:self-end lg:mb-6 flex-shrink-0">
           <button
             onClick={() => setViewMode("grid")}
             className={`p-2.5 rounded-lg transition-all duration-300 ${
@@ -168,6 +169,7 @@ const ClientList = () => {
                 ? "bg-neon-green/20 text-neon-green shadow-[0_0_10px_rgba(57,255,20,0.15)]"
                 : "text-gray-500 hover:text-white hover:bg-white/[0.06]"
             }`}
+            title="Grid view"
           >
             <svg
               className="w-4 h-4"
@@ -190,6 +192,7 @@ const ClientList = () => {
                 ? "bg-neon-green/20 text-neon-green shadow-[0_0_10px_rgba(57,255,20,0.15)]"
                 : "text-gray-500 hover:text-white hover:bg-white/[0.06]"
             }`}
+            title="List view"
           >
             <svg
               className="w-4 h-4"
@@ -223,7 +226,7 @@ const ClientList = () => {
       ) : (
         <>
           <div
-            className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}
+            className={`grid gap-4 sm:gap-6 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}
           >
             {clients.map((client) => (
               <ClientCard
@@ -252,7 +255,7 @@ const ClientList = () => {
           This will also affect all associated projects, invoices, and
           proposals. This action cannot be undone.
         </p>
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
           <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>

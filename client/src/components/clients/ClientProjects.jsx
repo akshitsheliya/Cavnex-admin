@@ -64,7 +64,7 @@ const ClientProjects = ({ projects = [], clientId }) => {
         <p className="text-gray-400 mb-4">No projects yet</p>
         <button
           onClick={() => navigate(`/projects/new?clientId=${clientId}`)}
-          className="px-4 py-2 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-colors"
+          className="px-4 py-2 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-colors text-sm"
         >
           Create First Project
         </button>
@@ -73,53 +73,54 @@ const ClientProjects = ({ projects = [], clientId }) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {projects.map((project) => {
         const statusConfig = getStatusConfig(project.status);
         return (
           <div
             key={project._id}
             onClick={() => navigate(`/projects/${project._id}`)}
-            className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all cursor-pointer group"
+            className="p-3 sm:p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all cursor-pointer group"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h4 className="font-medium text-white group-hover:text-neon-green transition-colors">
+            <div className="flex items-start justify-between gap-3 mb-2 sm:mb-3">
+              <div className="min-w-0 flex-1">
+                <h4 className="font-medium text-white group-hover:text-neon-green transition-colors text-sm sm:text-base truncate">
                   {project.name}
                 </h4>
-                <p className="text-sm text-gray-500">
-                  {project.description?.substring(0, 50)}...
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  {project.description?.substring(0, 50)}
+                  {project.description?.length > 50 ? "..." : ""}
                 </p>
               </div>
               <span
-                className={`px-2 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}
+                className={`px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 ${statusConfig.bg} ${statusConfig.text}`}
               >
                 {statusConfig.label}
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 {project.budget && (
-                  <span className="text-sm text-neon-green">
+                  <span className="text-xs sm:text-sm text-neon-green whitespace-nowrap">
                     {formatCurrency(project.budget)}
                   </span>
                 )}
                 {project.deadline && (
-                  <span className="text-sm text-gray-400">
+                  <span className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">
                     Due:{" "}
                     {new Date(project.deadline).toLocaleDateString("en-IN")}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-white/5 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="w-20 sm:w-24 h-1.5 sm:h-2 bg-white/5 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-neon-green to-neon-blue rounded-full"
+                    className="h-full bg-gradient-to-r from-neon-green to-neon-blue rounded-full transition-all duration-500"
                     style={{ width: `${project.progress || 0}%` }}
                   />
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 tabular-nums">
                   {project.progress || 0}%
                 </span>
               </div>

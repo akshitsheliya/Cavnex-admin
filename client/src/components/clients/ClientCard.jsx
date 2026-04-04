@@ -39,36 +39,38 @@ const ClientCard = ({ client, onDelete, onStatusChange }) => {
   const statusConfig = getStatusConfig(client.status);
 
   return (
-    <div className="glass-card p-6 hover:border-neon-green/30 hover:shadow-[0_0_30px_rgba(0,255,136,0.1)] transition-all duration-300 group">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center shadow-lg">
-            <span className="text-xl font-bold text-black">
+    <div className="glass-card p-4 sm:p-6 hover:border-neon-green/30 hover:shadow-[0_0_30px_rgba(0,255,136,0.1)] transition-all duration-300 group flex flex-col">
+      {/* Header: Avatar + Name + Status */}
+      <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center shadow-lg flex-shrink-0">
+            <span className="text-base sm:text-xl font-bold text-black">
               {client.businessName?.charAt(0).toUpperCase() ||
                 client.clientName?.charAt(0).toUpperCase()}
             </span>
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h3
               onClick={() => navigate(`/clients/${client._id}`)}
-              className="text-lg font-semibold text-white group-hover:text-neon-green transition-colors cursor-pointer"
+              className="text-sm sm:text-lg font-semibold text-white group-hover:text-neon-green transition-colors cursor-pointer truncate"
             >
               {client.businessName}
             </h3>
-            <p className="text-sm text-gray-400">{client.clientName}</p>
+            <p className="text-xs sm:text-sm text-gray-400 truncate">{client.clientName}</p>
           </div>
         </div>
         <span
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+          className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border whitespace-nowrap flex-shrink-0 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
         >
           {statusConfig.label}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+      {/* Contact Info Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 min-w-0">
           <svg
-            className="w-4 h-4"
+            className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -82,9 +84,9 @@ const ClientCard = ({ client, onDelete, onStatusChange }) => {
           </svg>
           <span className="truncate">{client.email}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 min-w-0">
           <svg
-            className="w-4 h-4"
+            className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -96,12 +98,12 @@ const ClientCard = ({ client, onDelete, onStatusChange }) => {
               d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
             />
           </svg>
-          <span>{client.phone}</span>
+          <span className="truncate">{client.phone}</span>
         </div>
         {client.industry && (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 min-w-0">
             <svg
-              className="w-4 h-4"
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -113,13 +115,13 @@ const ClientCard = ({ client, onDelete, onStatusChange }) => {
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
               />
             </svg>
-            <span>{client.industry}</span>
+            <span className="truncate">{client.industry}</span>
           </div>
         )}
         {client.address?.city && (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 min-w-0">
             <svg
-              className="w-4 h-4"
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -137,51 +139,53 @@ const ClientCard = ({ client, onDelete, onStatusChange }) => {
                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <span>{client.address.city}</span>
+            <span className="truncate">{client.address.city}</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-          <p className="text-xs text-gray-500">Projects</p>
-          <p className="text-lg font-semibold text-white">
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.02] border border-white/5">
+          <p className="text-[10px] sm:text-xs text-gray-500">Projects</p>
+          <p className="text-base sm:text-lg font-semibold text-white">
             {client.totalProjects || 0}
           </p>
         </div>
-        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-          <p className="text-xs text-gray-500">Revenue</p>
-          <p className="text-lg font-semibold text-neon-green">
+        <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.02] border border-white/5 min-w-0">
+          <p className="text-[10px] sm:text-xs text-gray-500">Revenue</p>
+          <p className="text-base sm:text-lg font-semibold text-neon-green truncate">
             {formatCurrency(client.totalRevenue || 0)}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-4 border-t border-white/5">
+      {/* Actions */}
+      <div className="flex items-center gap-1 sm:gap-2 pt-3 sm:pt-4 border-t border-white/5 mt-auto">
         <button
           onClick={() => navigate(`/clients/${client._id}`)}
-          className="flex-1 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+          className="flex-1 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
         >
           View
         </button>
         <button
           onClick={() => navigate(`/clients/${client._id}/edit`)}
-          className="flex-1 py-2 text-sm text-gray-400 hover:text-neon-green hover:bg-neon-green/10 rounded-lg transition-colors"
+          className="flex-1 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-400 hover:text-neon-green hover:bg-neon-green/10 rounded-lg transition-colors"
         >
           Edit
         </button>
         <button
           onClick={() => navigate(`/projects/new?clientId=${client._id}`)}
-          className="flex-1 py-2 text-sm text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-colors"
+          className="flex-1 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-colors whitespace-nowrap"
         >
           + Project
         </button>
         <button
           onClick={() => onDelete(client._id)}
-          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+          className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
         >
           <svg
-            className="w-4 h-4"
+            className="w-3.5 h-3.5 sm:w-4 sm:h-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
