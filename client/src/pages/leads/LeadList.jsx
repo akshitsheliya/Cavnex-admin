@@ -17,6 +17,8 @@ import ErrorAlert from "../../components/common/ErrorAlert";
 import LeadCard from "../../components/leads/LeadCard";
 import { formatCurrency, getLeadStatCards } from "../../config/statCardConfigs";
 import leadService from "../../services/leadService";
+import FilterBar from "../../components/common/FilterBar";
+import { leadFilterConfig } from "../../config/filterConfigs";
 
 const { Option } = Select;
 const { confirm } = Modal;
@@ -44,28 +46,15 @@ const LeadList = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "new", label: "New" },
-    { value: "contacted", label: "Contacted" },
-    { value: "meeting", label: "Meeting" },
-    { value: "proposal_sent", label: "Proposal Sent" },
-    { value: "negotiation", label: "Negotiation" },
-    { value: "closed_won", label: "Won" },
-    { value: "closed_lost", label: "Lost" },
-  ];
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
 
-  const sourceOptions = [
-    { value: "", label: "All Sources" },
-    { value: "website", label: "Website" },
-    { value: "instagram", label: "Instagram" },
-    { value: "referral", label: "Referral" },
-    { value: "google", label: "Google" },
-    { value: "cold_call", label: "Cold Call" },
-    { value: "linkedin", label: "LinkedIn" },
-    { value: "facebook", label: "Facebook" },
-    { value: "other", label: "Other" },
-  ];
+  const handleResetFilters = () => {
+    setFilters({ search: "", status: "", source: "" });
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -113,16 +102,6 @@ const LeadList = () => {
   useEffect(() => {
     fetchStats();
   }, []);
-
-  const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPagination((prev) => ({ ...prev, current: 1 }));
-  };
-
-  const handleResetFilters = () => {
-    setFilters({ search: "", status: "", source: "" });
-    setPagination((prev) => ({ ...prev, current: 1 }));
-  };
 
   const handleDeleteClick = (leadId) => {
     confirm({
@@ -212,58 +191,13 @@ const LeadList = () => {
 
       {/* Stat Cards */}
       <StatCards stats={statCards} loading={statsLoading} columns={4} />
-
-      {/* Filter Bar */}
-      <div className="glass-card p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="flex-1 min-w-0">
-            <Input
-              placeholder="Search leads..."
-              prefix={<SearchOutlined className="text-gray-400" />}
-              value={filters.search}
-              onChange={(e) => handleFilterChange("search", e.target.value)}
-              className="custom-search-input w-full"
-              allowClear
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Select
-              value={filters.status || undefined}
-              onChange={(value) => handleFilterChange("status", value || "")}
-              placeholder="All Status"
-              allowClear
-              className="custom-filter-select w-full sm:w-36 lg:w-40"
-              popupClassName="custom-dropdown"
-            >
-              {statusOptions.slice(1).map((opt) => (
-                <Option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              value={filters.source || undefined}
-              onChange={(value) => handleFilterChange("source", value || "")}
-              placeholder="All Sources"
-              allowClear
-              className="custom-filter-select w-full sm:w-36 lg:w-40"
-              popupClassName="custom-dropdown"
-            >
-              {sourceOptions.slice(1).map((opt) => (
-                <Option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </Option>
-              ))}
-            </Select>
-            <button
-              onClick={handleResetFilters}
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors whitespace-nowrap"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-      </div>
+      <FilterBar
+        searchPlaceholder="Search leads..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onReset={handleResetFilters}
+        filterConfig={leadFilterConfig}
+      />
 
       {/* Lead Grid / Empty State */}
       {loading ? (
