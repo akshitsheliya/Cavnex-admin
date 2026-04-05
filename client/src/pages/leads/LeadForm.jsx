@@ -7,6 +7,7 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import ReminderInput from "../../components/leads/ReminderInput";
 import leadService from "../../services/leadService";
+import { number } from "yup";
 
 const { TextArea } = AntInput;
 const { Option } = Select;
@@ -40,6 +41,7 @@ const LeadForm = () => {
     { value: "new", label: "New" },
     { value: "contacted", label: "Contacted" },
     { value: "meeting", label: "Meeting" },
+    { value: "proposal_pending", label: "Proposal Pending" },
     { value: "proposal_sent", label: "Proposal Sent" },
     { value: "negotiation", label: "Negotiation" },
     { value: "closed_won", label: "Closed Won" },
@@ -249,6 +251,14 @@ const LeadForm = () => {
             >
               <AntInput
                 placeholder="Enter phone number"
+                onChange={(e) => {
+                  const value = e.target.value
+                    .replace(/[^0-9]/g, "")
+                    .slice(0, 10);
+                  form.setFieldsValue({ phone: value });
+                }}
+                type="text"
+                maxLength={10}
                 className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
               />
             </Form.Item>

@@ -352,6 +352,7 @@ const updateLeadStatus = async (req, res, next) => {
       "new",
       "contacted",
       "meeting",
+      "proposal_pending",
       "proposal_sent",
       "negotiation",
       "closed_won",
@@ -387,7 +388,23 @@ const updateLeadStatus = async (req, res, next) => {
         message: "Lead not found",
       });
     }
+ if (status === "proposal_pending" && !lead.reminder?.date) {
+      const reminderDate = new Date();
+      reminderDate.setHours(reminderDate.getHours() + 24); // 24 hours from now
 
+      lead.reminder = {
+        date: reminderDate,
+        note: "Send proposal within 24 hours for better conversion rate",
+        status: "pending",
+        createdAt: new Date(),
+        completedAt: null,
+      };
+    }
+
+    lead.status = status;
+    lead.updatedAt = new Date();
+
+    await lead.save();
     const updatedLead = await Lead.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: new Date() },

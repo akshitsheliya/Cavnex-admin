@@ -7,6 +7,8 @@ import Button from "../../components/common/Button";
 import Loader from "../../components/common/Loader";
 import LeadStatusBadge from "../../components/leads/LeadStatusBadge";
 import ReminderDisplay from "../../components/leads/ReminderDisplay";
+import LeadStatusFlow from "../../components/leads/LeadStatusFlow";
+import CopyLeadButton from "../../components/leads/CopyLeadButton";
 import leadService from "../../services/leadService";
 
 const { confirm } = Modal;
@@ -35,6 +37,7 @@ const LeadDetail = () => {
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [reminderLoading, setReminderLoading] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   useEffect(() => {
     fetchLead();
@@ -95,11 +98,14 @@ const LeadDetail = () => {
 
   const handleStatusChange = async (newStatus) => {
     try {
+      setStatusUpdating(true);
       await leadService.updateLeadStatus(id, newStatus);
       setLead((prev) => ({ ...prev, status: newStatus }));
-      message.success("Status updated successfully");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update status");
+      throw err;
+    } finally {
+      setStatusUpdating(false);
     }
   };
 
@@ -190,16 +196,6 @@ const LeadDetail = () => {
     );
   }
 
-  const statusOptions = [
-    { value: "new", label: "New" },
-    { value: "contacted", label: "Contacted" },
-    { value: "meeting", label: "Meeting" },
-    { value: "proposal_sent", label: "Proposal Sent" },
-    { value: "negotiation", label: "Negotiation" },
-    { value: "closed_won", label: "Won" },
-    { value: "closed_lost", label: "Lost" },
-  ];
-
   return (
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 lg:space-y-6 px-2 sm:px-0">
       <button
@@ -241,6 +237,7 @@ const LeadDetail = () => {
         </div>
       )}
 
+      {/* Header Card */}
       <div className="glass-card p-3 sm:p-4 lg:p-6">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex items-start gap-3 sm:gap-4 min-w-0">
@@ -257,7 +254,7 @@ const LeadDetail = () => {
                 {lead.businessName || "No business name"}
               </p>
               <div className="mt-1.5 sm:mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <LeadStatusBadge status={lead.status} size="md" />
+                <LeadStatusBadge status={lead.status} size="md" showIcon />
                 {lead.convertedToClient && (
                   <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-neon-blue/20 text-neon-blue border border-neon-blue/30 whitespace-nowrap">
                     Converted
@@ -338,9 +335,16 @@ const LeadDetail = () => {
           </div>
         </div>
       </div>
-
+      <Card title="Status Progress">
+        <LeadStatusFlow
+          currentStatus={lead.status}
+          onStatusChange={handleStatusChange}
+          disabled={lead.convertedToClient || statusUpdating}
+        />
+      </Card>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-5 lg:space-y-6">
+          {/* Contact Information */}
           <Card title="Contact Information">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
               <InfoField label="Email">
@@ -371,6 +375,7 @@ const LeadDetail = () => {
             </div>
           </Card>
 
+          {/* Lead Details */}
           <Card title="Lead Details">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
               <InfoField label="Source">
@@ -418,6 +423,9 @@ const LeadDetail = () => {
         </div>
 
         <div className="space-y-4 sm:space-y-5 lg:space-y-6">
+          {/* Status Management */}
+
+          {/* Reminder */}
           <Card title="Reminder">
             <ReminderDisplay
               reminder={lead.reminder}
@@ -429,44 +437,12 @@ const LeadDetail = () => {
             />
           </Card>
 
-          <Card title="Update Status">
-            <div className="space-y-1.5 sm:space-y-2">
-              {statusOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handleStatusChange(option.value)}
-                  disabled={lead.convertedToClient}
-                  className={`w-full p-2.5 sm:p-3 rounded-xl text-left transition-all duration-200 text-xs sm:text-sm ${
-                    lead.status === option.value
-                      ? "bg-neon-green/10 border border-neon-green/30 text-neon-green"
-                      : "bg-white/[0.02] border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white"
-                  } ${
-                    lead.convertedToClient
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate">{option.label}</span>
-                    {lead.status === option.value && (
-                      <svg
-                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
+          {/* Copy Details */}
+          <Card title="Copy Details">
+            <CopyLeadButton lead={lead} />
           </Card>
 
+          {/* Quick Actions */}
           <Card title="Quick Actions">
             <div className="space-y-2 sm:space-y-2.5">
               <a href={`mailto:${lead.email}`} className={quickActionBase}>
@@ -547,6 +523,7 @@ const LeadDetail = () => {
         </div>
       </div>
 
+      {/* Convert Modal */}
       <Modal
         open={showConvertModal}
         onCancel={() => setShowConvertModal(false)}

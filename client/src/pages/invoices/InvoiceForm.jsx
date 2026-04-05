@@ -508,9 +508,15 @@ const InvoiceForm = () => {
                   <input
                     type="text"
                     min="0"
+                    maxLength={formData.discountType === "percentage" ? 3 : 10}
                     value={formData.discount}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      let val = e.target.value.replace(/[^0-9]/g, "");
+                      if (formData.discountType === "percentage") {
+                        val = val.slice(0, 3);
+                      } else {
+                        val = val.slice(0, 10);
+                      }
                       handleChange("discount", Number(val));
                     }}
                     className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"

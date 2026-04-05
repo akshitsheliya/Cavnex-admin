@@ -47,8 +47,9 @@ const LeadList = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleFilterChange = (key, value) => {
+    console.log("🔍 Filter changed:", key, value);
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setPagination((prev) => ({ ...prev, current: 1 }));
+    setPagination((prev) => ({ ...prev, current: 1 })); // Reset to page 1
   };
 
   const handleResetFilters = () => {
@@ -59,19 +60,42 @@ const LeadList = () => {
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
+      setError(""); // Clear previous errors
+
       const params = {
         page: pagination.current,
         limit: pagination.limit,
         ...filters,
       };
+
+      // Remove empty filters
       Object.keys(params).forEach((key) => {
         if (!params[key]) delete params[key];
       });
+
+      console.log("📡 Fetching leads with params:", params);
+
       const response = await leadService.getLeads(params);
-      setLeads(response.data);
-      setPagination((prev) => ({ ...prev, ...response.pagination }));
+
+      console.log("✅ Received leads:", {
+        count: response.data?.length,
+        pagination: response.pagination,
+      });
+
+      setLeads(response.data || []);
+
+      // ✅ FIX: Properly update pagination
+      if (response.pagination) {
+        setPagination((prev) => ({
+          ...prev,
+          total: response.pagination.total,
+          pages: response.pagination.pages,
+        }));
+      }
     } catch (err) {
+      console.error("❌ Failed to fetch leads:", err);
       setError(err.response?.data?.message || "Failed to fetch leads");
+      setLeads([]); // Clear leads on error
     } finally {
       setLoading(false);
     }
@@ -97,7 +121,7 @@ const LeadList = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [fetchLeads]);
+  }, [pagination.current, filters]);
 
   useEffect(() => {
     fetchStats();
@@ -144,9 +168,13 @@ const LeadList = () => {
       setSelectedLeadId(null);
     }
   };
-
   const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, current: newPage }));
+    console.log("📄 Changing to page:", newPage);
+    setPagination((prev) => ({
+      ...prev,
+      current: newPage,
+    }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const statCards = getLeadStatCards(stats);
@@ -233,33 +261,133 @@ const LeadList = () => {
         </>
       )}
 
-      {/* Analytics Section */}
       {stats && (
         <div className="glass-card p-3 sm:p-4 lg:p-6">
-          {Object.keys(stats.sourceCounts || {}).length > 0 && (
-            <div className="mt-4 sm:mt-5 lg:mt-6">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
+            Lead Analytics
+          </h3>
+
+          {/* Status Distribution */}
+          {stats.statusCounts && Object.keys(stats.statusCounts).length > 0 && (
+            <div className="mb-4 sm:mb-6">
+              <h4 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3">
+                Leads by Status
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                {Object.entries(stats.statusCounts).map(([status, count]) => {
+                  const statusConfig = {
+                    new: { icon: "✨", label: "New", color: "purple" },
+                    contacted: {
+                      icon: "📞",
+                      label: "Contacted",
+                      color: "blue",
+                    },
+                    meeting: { icon: "🤝", label: "Meeting", color: "amber" },
+                    proposal_pending: {
+                      icon: "⏳",
+                      label: "Proposal Pending",
+                      color: "orange",
+                    },
+                    proposal_sent: {
+                      icon: "📨",
+                      label: "Proposal Sent",
+                      color: "cyan",
+                    },
+                    negotiation: {
+                      icon: "💬",
+                      label: "Negotiation",
+                      color: "yellow",
+                    },
+                    closed_won: { icon: "🎉", label: "Won", color: "green" },
+                    closed_lost: { icon: "❌", label: "Lost", color: "red" },
+                  };
+
+                  const config = statusConfig[status] || {
+                    icon: "📌",
+                    label: status,
+                    color: "gray",
+                  };
+
+                  return (
+                    <div
+                      key={status}
+                      className="p-2 sm:p-2.5 lg:p-3 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all cursor-pointer group"
+                      onClick={() => handleFilterChange("status", status)}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-sm">{config.icon}</span>
+                        <p className="text-[10px] sm:text-xs text-gray-400 capitalize truncate flex-1">
+                          {config.label}
+                        </p>
+                      </div>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-white group-hover:text-neon-green transition-colors">
+                        {count}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Source Distribution - FIXED */}
+          {stats.sourceCounts && Object.keys(stats.sourceCounts).length > 0 && (
+            <div>
               <h4 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3">
                 Leads by Platform
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                {Object.entries(stats.sourceCounts || {}).map(
-                  ([source, count]) => (
+                {Object.entries(stats.sourceCounts).map(([source, count]) => {
+                  const sourceConfig = {
+                    website: { icon: "🌐", label: "Website" },
+                    instagram: { icon: "📸", label: "Instagram" },
+                    facebook: { icon: "👥", label: "Facebook" },
+                    linkedin: { icon: "💼", label: "LinkedIn" },
+                    google: { icon: "🔍", label: "Google" },
+                    referral: { icon: "🤝", label: "Referral" },
+                    cold_call: { icon: "📞", label: "Cold Call" },
+                    other: { icon: "📌", label: "Other" },
+                  };
+
+                  const config = sourceConfig[source] || {
+                    icon: "📌",
+                    label: source.replace("_", " "),
+                  };
+
+                  return (
                     <div
                       key={source}
-                      className="p-2 sm:p-2.5 lg:p-3 rounded-lg bg-white/5 border border-white/10 text-center"
+                      className="p-2 sm:p-2.5 lg:p-3 rounded-lg bg-white/5 border border-white/10 hover:border-neon-green/30 transition-all cursor-pointer group"
+                      onClick={() => handleFilterChange("source", source)}
+                      title={`Click to filter by ${config.label}`}
                     >
-                      <p className="text-[10px] sm:text-xs text-gray-400 capitalize truncate">
-                        {source.replace("_", " ")}
-                      </p>
-                      <p className="text-sm sm:text-base lg:text-lg font-bold text-white mt-0.5 sm:mt-1">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-sm">{config.icon}</span>
+                        <p className="text-[10px] sm:text-xs text-gray-400 capitalize truncate flex-1">
+                          {config.label}
+                        </p>
+                      </div>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-white group-hover:text-neon-green transition-colors">
                         {count}
                       </p>
                     </div>
-                  )
-                )}
+                  );
+                })}
               </div>
             </div>
           )}
+
+          {/* Empty State */}
+          {(!stats.sourceCounts ||
+            Object.keys(stats.sourceCounts).length === 0) &&
+            (!stats.statusCounts ||
+              Object.keys(stats.statusCounts).length === 0) && (
+              <div className="text-center py-8">
+                <p className="text-gray-400 text-sm">
+                  No analytics data available
+                </p>
+              </div>
+            )}
         </div>
       )}
 

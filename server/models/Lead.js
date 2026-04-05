@@ -55,6 +55,7 @@ const leadSchema = new mongoose.Schema(
         "new",
         "contacted",
         "meeting",
+        "proposal_pending",
         "proposal_sent",
         "negotiation",
         "closed_won",

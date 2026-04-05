@@ -226,10 +226,11 @@ const DynamicFieldsForm = ({ fields, onChange, clients = [] }) => {
                 <Input
                   label="Percentage"
                   type="text"
+                  maxLength={3}
                   placeholder="40"
                   value={payment.percentage || ""}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, "");
+                    const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 3);
                     handlePaymentScheduleChange(
                       index,
                       "percentage",

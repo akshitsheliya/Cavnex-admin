@@ -1314,11 +1314,12 @@ const ProposalForm = () => {
                   <Input
                     label="Discount (%)"
                     type="text"
+                    maxLength={3}
                     min="0"
                     max="100"
                     value={formData.pricing.discount}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 3);
                       handleNestedChange(
                         "pricing",
                         "discount",
@@ -1329,9 +1330,10 @@ const ProposalForm = () => {
                   <Input
                     label="Tax (%)"
                     type="text"
+                    maxLength={3}
                     value={formData.pricing.tax}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 3);
                       handleNestedChange(
                         "pricing",
                         "tax",
@@ -1375,10 +1377,11 @@ const ProposalForm = () => {
                         />
                         <Input
                           type="text"
+                          maxLength={3}
                           placeholder="%"
                           value={term.percentage}
                           onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, "");
+                            const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 3);
                             const newTerms = [...formData.paymentTerms.terms];
                             newTerms[index].percentage = Number(val);
                             handleNestedChange(

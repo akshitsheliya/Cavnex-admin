@@ -1,4 +1,3 @@
-// LeadStatusBadge.jsx
 import React from "react";
 
 const statusConfig = {
@@ -8,13 +7,15 @@ const statusConfig = {
     border: "border-purple-500/30",
     dot: "bg-purple-400",
     label: "New",
+    icon: "✨",
   },
   contacted: {
-    bg: "bg-neon-blue/20",
-    text: "text-neon-blue",
-    border: "border-neon-blue/30",
-    dot: "bg-neon-blue",
+    bg: "bg-blue-500/20",
+    text: "text-blue-400",
+    border: "border-blue-500/30",
+    dot: "bg-blue-400",
     label: "Contacted",
+    icon: "📞",
   },
   meeting: {
     bg: "bg-amber-500/20",
@@ -22,27 +23,39 @@ const statusConfig = {
     border: "border-amber-500/30",
     dot: "bg-amber-400",
     label: "Meeting",
+    icon: "🤝",
+  },
+  proposal_pending: {
+    bg: "bg-orange-500/20",
+    text: "text-orange-400",
+    border: "border-orange-500/30",
+    dot: "bg-orange-400",
+    label: "Proposal Pending",
+    icon: "⏳",
   },
   proposal_sent: {
     bg: "bg-cyan-500/20",
     text: "text-cyan-400",
     border: "border-cyan-500/30",
     dot: "bg-cyan-400",
-    label: "Proposal",
+    label: "Proposal Sent",
+    icon: "📨",
   },
   negotiation: {
-    bg: "bg-orange-500/20",
-    text: "text-orange-400",
-    border: "border-orange-500/30",
-    dot: "bg-orange-400",
+    bg: "bg-yellow-500/20",
+    text: "text-yellow-400",
+    border: "border-yellow-500/30",
+    dot: "bg-yellow-400",
     label: "Negotiation",
+    icon: "💬",
   },
   closed_won: {
-    bg: "bg-neon-green/20",
-    text: "text-neon-green",
-    border: "border-neon-green/30",
-    dot: "bg-neon-green",
+    bg: "bg-green-500/20",
+    text: "text-green-400",
+    border: "border-green-500/30",
+    dot: "bg-green-400",
     label: "Won",
+    icon: "🎉",
   },
   closed_lost: {
     bg: "bg-red-500/20",
@@ -50,6 +63,7 @@ const statusConfig = {
     border: "border-red-500/30",
     dot: "bg-red-400",
     label: "Lost",
+    icon: "❌",
   },
 };
 
@@ -68,7 +82,7 @@ const sizes = {
   },
 };
 
-const LeadStatusBadge = ({ status, size = "md" }) => {
+const LeadStatusBadge = ({ status, size = "md", showIcon = false }) => {
   const config = statusConfig[status] || statusConfig.new;
   const sizeClass = sizes[size] || sizes.md;
 
@@ -80,6 +94,7 @@ const LeadStatusBadge = ({ status, size = "md" }) => {
         ${config.bg} ${config.text} ${config.border} ${sizeClass.pill}
       `}
     >
+      {showIcon && <span>{config.icon}</span>}
       <span
         className={`rounded-full flex-shrink-0 ${config.dot} ${sizeClass.dot}`}
       />
