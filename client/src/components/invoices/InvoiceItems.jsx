@@ -85,12 +85,13 @@ const InvoiceItems = ({ items, onChange }) => {
               </label>
               <div className="flex gap-2">
                 <input
-                  type="number"
+                  type="text"
                   min="1"
                   value={item.quantity}
-                  onChange={(e) =>
-                    handleItemChange(index, "quantity", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, "");
+                    handleItemChange(index, "quantity", val);
+                  }}
                   className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-neon-green/50"
                 />
                 <select

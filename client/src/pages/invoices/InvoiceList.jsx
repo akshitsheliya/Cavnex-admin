@@ -301,12 +301,13 @@ const InvoiceList = () => {
 
           <Input
             label="Amount (₹)"
-            type="number"
+            type="text"
             placeholder="Enter payment amount"
             value={paymentData.amount}
-            onChange={(e) =>
-              setPaymentData((prev) => ({ ...prev, amount: e.target.value }))
-            }
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9]/g, "");
+              setPaymentData((prev) => ({ ...prev, amount: val }));
+            }}
             required
           />
 

@@ -1224,19 +1224,20 @@ const ProposalForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="Base Price (₹)"
-                    type="number"
+                    type="text"
                     value={formData.pricing.basePrice}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
                       handleNestedChange(
                         "pricing",
                         "basePrice",
-                        Number(e.target.value)
-                      )
-                    }
+                        Number(val)
+                      );
+                    }}
                   />
                   <Input
                     label="Features Price (₹)"
-                    type="number"
+                    type="text"
                     value={formData.pricing.featuresPrice}
                     onChange={(e) =>
                       handleNestedChange(
@@ -1265,16 +1266,17 @@ const ProposalForm = () => {
                         className="flex-1 mb-0"
                       />
                       <Input
-                        type="number"
+                        type="text"
                         placeholder="Price"
                         value={addOn.price}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, "");
                           handleCustomAddOnChange(
                             index,
                             "price",
-                            e.target.value
-                          )
-                        }
+                            val
+                          );
+                        }}
                         className="w-32 mb-0"
                       />
                       <button
@@ -1311,29 +1313,31 @@ const ProposalForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input
                     label="Discount (%)"
-                    type="number"
+                    type="text"
                     min="0"
                     max="100"
                     value={formData.pricing.discount}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
                       handleNestedChange(
                         "pricing",
                         "discount",
-                        Number(e.target.value)
-                      )
-                    }
+                        Number(val)
+                      );
+                    }}
                   />
                   <Input
                     label="Tax (%)"
-                    type="number"
+                    type="text"
                     value={formData.pricing.tax}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
                       handleNestedChange(
                         "pricing",
                         "tax",
-                        Number(e.target.value)
-                      )
-                    }
+                        Number(val)
+                      );
+                    }}
                   />
                 </div>
               </div>
@@ -1370,12 +1374,13 @@ const ProposalForm = () => {
                           className="flex-1 mb-0"
                         />
                         <Input
-                          type="number"
+                          type="text"
                           placeholder="%"
                           value={term.percentage}
                           onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, "");
                             const newTerms = [...formData.paymentTerms.terms];
-                            newTerms[index].percentage = Number(e.target.value);
+                            newTerms[index].percentage = Number(val);
                             handleNestedChange(
                               "paymentTerms",
                               "terms",

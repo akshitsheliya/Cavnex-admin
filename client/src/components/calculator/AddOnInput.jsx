@@ -80,12 +80,13 @@ const AddOnInput = ({ customAddOns, onAdd, onRemove }) => {
               required
             />
             <input
-              type="number"
+              type="text"
               placeholder="Price (₹)"
               value={newAddOn.price}
-              onChange={(e) =>
-                setNewAddOn((prev) => ({ ...prev, price: e.target.value }))
-              }
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, "");
+                setNewAddOn((prev) => ({ ...prev, price: val }));
+              }}
               className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50"
               min="0"
               required

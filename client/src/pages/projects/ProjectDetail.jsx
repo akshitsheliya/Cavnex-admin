@@ -806,14 +806,15 @@ const ProjectDetail = () => {
               Estimated Hours
             </label>
             <input
-              type="number"
+              type="text"
               value={newFeature.estimatedHours}
-              onChange={(e) =>
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, "");
                 setNewFeature((prev) => ({
                   ...prev,
-                  estimatedHours: e.target.value,
-                }))
-              }
+                  estimatedHours: val,
+                }));
+              }}
               placeholder="0"
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon-green/50"
             />

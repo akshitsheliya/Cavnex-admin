@@ -320,7 +320,7 @@ const LeadForm = () => {
               className="mb-0"
             >
               <AntInput
-                type="number"
+                type="text"
                 placeholder="Enter estimated value"
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, "");

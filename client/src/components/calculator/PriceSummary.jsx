@@ -101,13 +101,14 @@ const PriceSummary = ({
         <label className="text-sm text-gray-400 mb-2 block">Discount (%)</label>
         <div className="flex items-center gap-2">
           <input
-            type="number"
+            type="text"
             min="0"
             max="50"
             value={discount}
-            onChange={(e) =>
-              setDiscount(Math.min(50, Math.max(0, Number(e.target.value))))
-            }
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9]/g, "");
+              setDiscount(Math.min(50, Math.max(0, Number(val))));
+            }}
             className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
           />
           <span className="text-gray-400">%</span>

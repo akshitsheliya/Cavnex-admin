@@ -506,12 +506,13 @@ const InvoiceForm = () => {
                 </label>
                 <div className="flex gap-2">
                   <input
-                    type="number"
+                    type="text"
                     min="0"
                     value={formData.discount}
-                    onChange={(e) =>
-                      handleChange("discount", Number(e.target.value))
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      handleChange("discount", Number(val));
+                    }}
                     className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-neon-green/50"
                   />
                   <select

@@ -225,16 +225,17 @@ const DynamicFieldsForm = ({ fields, onChange, clients = [] }) => {
               <div className="col-span-6 md:col-span-2">
                 <Input
                   label="Percentage"
-                  type="number"
+                  type="text"
                   placeholder="40"
                   value={payment.percentage || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, "");
                     handlePaymentScheduleChange(
                       index,
                       "percentage",
-                      e.target.value
-                    )
-                  }
+                      val
+                    );
+                  }}
                 />
               </div>
               <div className="col-span-6 md:col-span-3">

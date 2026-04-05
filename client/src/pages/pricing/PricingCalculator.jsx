@@ -985,12 +985,13 @@ const PricingCalculator = () => {
           />
           <Input
             label="Price (₹)"
-            type="number"
+            type="text"
             placeholder="Enter price"
             value={newAddOn.price}
-            onChange={(e) =>
-              setNewAddOn((prev) => ({ ...prev, price: e.target.value }))
-            }
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9]/g, "");
+              setNewAddOn((prev) => ({ ...prev, price: val }));
+            }}
             required
           />
           <div>

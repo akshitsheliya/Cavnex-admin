@@ -318,9 +318,12 @@ const ProjectForm = () => {
                         <Input
                             label="Budget (₹)"
                             name="budget"
-                            type="number"
+                            type="text"
                             value={formData.budget}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                                e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                                handleChange(e);
+                            }}
                             onBlur={handleBlur}
                             placeholder="Enter budget amount"
                             error={errors.budget}
@@ -329,9 +332,12 @@ const ProjectForm = () => {
                         <Input
                             label="Amount Paid (₹)"
                             name="amountPaid"
-                            type="number"
+                            type="text"
                             value={formData.amountPaid}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                                e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                                handleChange(e);
+                            }}
                             onBlur={handleBlur}
                             placeholder="Enter amount paid"
                             error={errors.amountPaid}
