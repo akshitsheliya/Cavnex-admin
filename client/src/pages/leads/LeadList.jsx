@@ -236,44 +236,6 @@ const LeadList = () => {
       {/* Analytics Section */}
       {stats && (
         <div className="glass-card p-3 sm:p-4 lg:p-6">
-          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-white mb-3 sm:mb-4">
-            Lead Analytics
-          </h3>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-            <div className="p-2.5 sm:p-3 lg:p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
-              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
-                Total Leads
-              </p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white mt-0.5 sm:mt-1">
-                {stats.totalLeads}
-              </p>
-            </div>
-            <div className="p-2.5 sm:p-3 lg:p-4 rounded-xl bg-neon-green/10 border border-neon-green/30">
-              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
-                Qualified
-              </p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-neon-green mt-0.5 sm:mt-1">
-                {stats.statusCounts?.contacted || 0}
-              </p>
-            </div>
-            <div className="p-2.5 sm:p-3 lg:p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
-                Conversion Rate
-              </p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">
-                {stats.conversionRate}%
-              </p>
-            </div>
-            <div className="p-2.5 sm:p-3 lg:p-4 rounded-xl bg-green-500/10 border border-green-500/30">
-              <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider truncate">
-                Total Value
-              </p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400 mt-0.5 sm:mt-1 truncate">
-                {formatCurrency(stats.totalValue)}
-              </p>
-            </div>
-          </div>
-
           {Object.keys(stats.sourceCounts || {}).length > 0 && (
             <div className="mt-4 sm:mt-5 lg:mt-6">
               <h4 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3">
