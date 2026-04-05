@@ -322,6 +322,10 @@ const LeadForm = () => {
               <AntInput
                 type="number"
                 placeholder="Enter estimated value"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  e.target.value = value;
+                }}
                 className="custom-input h-10 sm:h-11 bg-white/5 border-white/10 text-white placeholder-gray-500 rounded-xl hover:border-neon-green/50 focus:border-neon-green/50"
               />
             </Form.Item>
@@ -442,9 +446,9 @@ const LeadForm = () => {
         .custom-dropdown .ant-select-item-option-selected {
           background: rgba(0, 255, 136, 0.1) !important;
         }
-        .custom-datepicker-dropdown {
-          background: #1a1a2e !important;
-        }
+        // .custom-datepicker-dropdown {
+        //   background: #1a1a2e !important;
+        // }
         .custom-datepicker-dropdown .ant-picker-panel {
           background: #1a1a2e !important;
           border-color: rgba(255, 255, 255, 0.1) !important;

@@ -161,10 +161,13 @@ const DynamicFieldsForm = ({ fields, onChange, clients = [] }) => {
           />
           <Input
             label="Contract Value (₹)"
-            type="number"
+            type="text"
             placeholder="Enter amount"
             value={fields.price || ""}
-            onChange={(e) => handleChange("price", Number(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, "");
+              handleChange("price", value);
+            }}
             required
           />
           <div>

@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
+import Dropdown from "../common/Dropdown";
 import { formatCurrency } from "../../utils/dashboardHelpers";
 
 const RevenueChart = ({
@@ -13,6 +14,12 @@ const RevenueChart = ({
   chartTotalProjects,
 }) => {
   const currentYear = new Date().getFullYear();
+
+  const periodOptions = [
+    { value: "6months", label: "Last 6 Months" },
+    { value: "year", label: `This Year (${currentYear})` },
+    { value: "all", label: "All Time" },
+  ];
 
   const getBarLabel = (item) => {
     if (chartPeriod === "all") return item.year || item.label;
@@ -30,15 +37,15 @@ const RevenueChart = ({
             Revenue from completed projects
           </p>
         </div>
-        <select
+        <Dropdown
           value={chartPeriod}
-          onChange={(e) => onPeriodChange(e.target.value)}
-          className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-neon-green/50 cursor-pointer"
-        >
-          <option value="6months">Last 6 Months</option>
-          <option value="year">This Year ({currentYear})</option>
-          <option value="all">All Time</option>
-        </select>
+          onChange={onPeriodChange}
+          options={periodOptions}
+          placeholder="Select Period"
+          variant="minimal"
+          size="sm"
+          className="min-w-[160px]"
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6">
