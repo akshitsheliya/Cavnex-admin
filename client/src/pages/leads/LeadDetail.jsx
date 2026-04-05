@@ -10,6 +10,7 @@ import ReminderDisplay from "../../components/leads/ReminderDisplay";
 import LeadStatusFlow from "../../components/leads/LeadStatusFlow";
 import CopyLeadButton from "../../components/leads/CopyLeadButton";
 import leadService from "../../services/leadService";
+import { eventBus, EVENTS } from "../../../../server/utils/eventBus";
 
 const { confirm } = Modal;
 
@@ -47,6 +48,7 @@ const LeadDetail = () => {
     try {
       setLoading(true);
       const response = await leadService.getLead(id);
+      console.log("📦 Lead fetched:", response.data);
       setLead(response.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch lead");
@@ -97,13 +99,29 @@ const LeadDetail = () => {
   };
 
   const handleStatusChange = async (newStatus) => {
+    console.log("🔄 Status change requested:", newStatus);
+
     try {
       setStatusUpdating(true);
+      setError("");
+
       await leadService.updateLeadStatus(id, newStatus);
-      setLead((prev) => ({ ...prev, status: newStatus }));
-      // Refetch lead to get updated reminder (backend sets it automatically)
-      // await fetchLead();
+      console.log("✅ Status updated successfully to:", newStatus);
+
+      // ✅ Emit event for notification refresh
+      eventBus.emit(EVENTS.LEAD_STATUS_CHANGED, {
+        leadId: id,
+        status: newStatus,
+      });
+
+      // Refetch the lead to get complete updated data
+      const response = await leadService.getLead(id);
+      console.log("📦 Lead refetched after status change:", response.data);
+      setLead(response.data);
+
+      return true;
     } catch (err) {
+      console.error("❌ Status change failed:", err);
       setError(err.response?.data?.message || "Failed to update status");
       throw err;
     } finally {
@@ -111,8 +129,10 @@ const LeadDetail = () => {
     }
   };
 
+  // ✅ Auto reminder when proposal_pending is set
   const handleAutoReminder = async () => {
     try {
+      console.log("⏰ Setting auto reminder...");
       const reminderDate = new Date();
       reminderDate.setHours(reminderDate.getHours() + 24);
 
@@ -122,16 +142,23 @@ const LeadDetail = () => {
       });
 
       // Refetch to update UI
-      await fetchLead();
+      const response = await leadService.getLead(id);
+      setLead(response.data);
+      console.log("✅ Auto reminder set successfully");
     } catch (err) {
-      console.error("Failed to set auto reminder:", err);
+      console.error("❌ Failed to set auto reminder:", err);
     }
   };
+
   const handleReminderStatusChange = async (status) => {
     try {
       setReminderLoading(true);
       await leadService.updateReminderStatus(id, status);
       await fetchLead();
+
+      // ✅ Emit event for notification refresh
+      eventBus.emit(EVENTS.REMINDER_UPDATED, { leadId: id, status });
+
       message.success(
         `Reminder ${status === "completed" ? "completed" : "dismissed"}`
       );
@@ -151,6 +178,10 @@ const LeadDetail = () => {
       setReminderLoading(true);
       await leadService.deleteReminder(id);
       await fetchLead();
+
+      // ✅ Emit event for notification refresh
+      eventBus.emit(EVENTS.REMINDER_DELETED, { leadId: id });
+
       message.success("Reminder deleted successfully");
     } catch (err) {
       console.error("Failed to delete reminder:", err);
@@ -165,6 +196,10 @@ const LeadDetail = () => {
       setReminderLoading(true);
       await leadService.setReminder(id, reminderData);
       await fetchLead();
+
+      // ✅ Emit event for notification refresh
+      eventBus.emit(EVENTS.REMINDER_CREATED, { leadId: id });
+
       message.success("Reminder updated successfully");
     } catch (err) {
       console.error("Failed to update reminder:", err);
@@ -213,6 +248,18 @@ const LeadDetail = () => {
       </div>
     );
   }
+
+  // ✅ FIX: Only disable if BOTH converted AND not being updated
+  // Allow status change even for won/lost leads (reopen functionality)
+  const isStatusChangeDisabled =
+    lead.convertedToClient && lead.status === "closed_won";
+
+  console.log("🎛️ Render state:", {
+    status: lead.status,
+    convertedToClient: lead.convertedToClient,
+    statusUpdating,
+    isStatusChangeDisabled,
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 lg:space-y-6 px-2 sm:px-0">
@@ -353,14 +400,18 @@ const LeadDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ FIX: Status Progress Card */}
       <Card title="Status Progress">
         <LeadStatusFlow
           currentStatus={lead.status}
           onStatusChange={handleStatusChange}
           onAutoReminder={handleAutoReminder}
-          disabled={lead.convertedToClient || statusUpdating}
+          disabled={isStatusChangeDisabled}
+          isConverted={lead.convertedToClient}
         />
       </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-5 lg:space-y-6">
           {/* Contact Information */}
@@ -393,7 +444,16 @@ const LeadDetail = () => {
               </InfoField>
             </div>
           </Card>
-
+          <Card title="Reminder">
+            <ReminderDisplay
+              reminder={lead.reminder}
+              leadId={lead._id}
+              onStatusChange={handleReminderStatusChange}
+              onDelete={handleReminderDelete}
+              onEdit={handleReminderEdit}
+              loading={reminderLoading}
+            />
+          </Card>
           {/* Lead Details */}
           <Card title="Lead Details">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
@@ -442,19 +502,7 @@ const LeadDetail = () => {
         </div>
 
         <div className="space-y-4 sm:space-y-5 lg:space-y-6">
-          {/* Status Management */}
-
           {/* Reminder */}
-          <Card title="Reminder">
-            <ReminderDisplay
-              reminder={lead.reminder}
-              leadId={lead._id}
-              onStatusChange={handleReminderStatusChange}
-              onDelete={handleReminderDelete}
-              onEdit={handleReminderEdit}
-              loading={reminderLoading}
-            />
-          </Card>
 
           {/* Copy Details */}
           <Card title="Copy Details">

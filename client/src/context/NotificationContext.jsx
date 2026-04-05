@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import leadService from "../services/leadService";
+import { eventBus, EVENTS } from "../../../server/utils/eventBus";
 
 export const NotificationContext = createContext(null);
 
@@ -39,12 +40,19 @@ export const NotificationProvider = ({ children }) => {
       if (showLoading) setLoading(true);
       setError(null);
 
+      console.log("🔔 Fetching reminders...");
+
       const [remindersResponse, statsResponse] = await Promise.all([
         leadService.getReminders(),
         leadService.getReminderStats(),
       ]);
 
       if (!isMountedRef.current) return;
+
+      console.log("✅ Reminders fetched:", {
+        reminders: remindersResponse.data,
+        stats: statsResponse.data,
+      });
 
       if (remindersResponse.success) {
         setReminders(remindersResponse.data);
@@ -57,7 +65,7 @@ export const NotificationProvider = ({ children }) => {
       setLastFetched(new Date());
     } catch (err) {
       if (!isMountedRef.current) return;
-      console.error("Failed to fetch reminders:", err);
+      console.error("❌ Failed to fetch reminders:", err);
       setError(err.response?.data?.message || "Failed to fetch reminders");
     } finally {
       if (isMountedRef.current) {
@@ -71,6 +79,7 @@ export const NotificationProvider = ({ children }) => {
       try {
         await leadService.updateReminderStatus(leadId, "completed");
         await fetchReminders(false);
+        eventBus.emit(EVENTS.REMINDER_UPDATED, { leadId, status: "completed" });
         return { success: true };
       } catch (err) {
         console.error("Failed to mark reminder as completed:", err);
@@ -85,6 +94,7 @@ export const NotificationProvider = ({ children }) => {
       try {
         await leadService.updateReminderStatus(leadId, "dismissed");
         await fetchReminders(false);
+        eventBus.emit(EVENTS.REMINDER_UPDATED, { leadId, status: "dismissed" });
         return { success: true };
       } catch (err) {
         console.error("Failed to dismiss reminder:", err);
@@ -99,6 +109,7 @@ export const NotificationProvider = ({ children }) => {
       try {
         await leadService.deleteReminder(leadId);
         await fetchReminders(false);
+        eventBus.emit(EVENTS.REMINDER_DELETED, { leadId });
         return { success: true };
       } catch (err) {
         console.error("Failed to delete reminder:", err);
@@ -121,14 +132,17 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const refresh = useCallback(() => {
+    console.log("🔄 Manual refresh triggered");
     fetchReminders(true);
   }, [fetchReminders]);
 
+  // ✅ Initial fetch
   useEffect(() => {
     isMountedRef.current = true;
 
     const token = localStorage.getItem("token");
     if (token) {
+      console.log("🚀 Initial reminder fetch");
       fetchReminders(true);
     }
 
@@ -137,27 +151,73 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [fetchReminders]);
 
+  // ✅ Auto-refresh every 60 seconds
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    console.log("⏰ Setting up auto-refresh (60s interval)");
+
     intervalRef.current = setInterval(() => {
+      console.log("🔄 Auto-refresh triggered");
       fetchReminders(false);
     }, 60000);
 
     return () => {
       if (intervalRef.current) {
+        console.log("🛑 Clearing auto-refresh interval");
         clearInterval(intervalRef.current);
       }
     };
   }, [fetchReminders]);
 
+  // ✅ Listen to reminder events from other components
+  useEffect(() => {
+    const handleReminderUpdate = (data) => {
+      console.log("🔔 Reminder updated event received:", data);
+      fetchReminders(false);
+    };
+
+    const handleReminderCreate = (data) => {
+      console.log("🔔 Reminder created event received:", data);
+      fetchReminders(false);
+    };
+
+    const handleReminderDelete = (data) => {
+      console.log("🔔 Reminder deleted event received:", data);
+      fetchReminders(false);
+    };
+
+    const handleLeadStatusChange = (data) => {
+      console.log("🔔 Lead status changed event received:", data);
+      // Refresh if status is proposal_pending (auto-reminder)
+      if (data.status === "proposal_pending") {
+        fetchReminders(false);
+      }
+    };
+
+    eventBus.on(EVENTS.REMINDER_UPDATED, handleReminderUpdate);
+    eventBus.on(EVENTS.REMINDER_CREATED, handleReminderCreate);
+    eventBus.on(EVENTS.REMINDER_DELETED, handleReminderDelete);
+    eventBus.on(EVENTS.LEAD_STATUS_CHANGED, handleLeadStatusChange);
+
+    return () => {
+      eventBus.off(EVENTS.REMINDER_UPDATED, handleReminderUpdate);
+      eventBus.off(EVENTS.REMINDER_CREATED, handleReminderCreate);
+      eventBus.off(EVENTS.REMINDER_DELETED, handleReminderDelete);
+      eventBus.off(EVENTS.LEAD_STATUS_CHANGED, handleLeadStatusChange);
+    };
+  }, [fetchReminders]);
+
+  // ✅ Storage change listener
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "token") {
         if (e.newValue) {
+          console.log("🔑 Token added, fetching reminders");
           fetchReminders(true);
         } else {
+          console.log("🔑 Token removed, clearing reminders");
           setReminders({ overdue: [], today: [], upcoming: [] });
           setStats({
             overdue: 0,

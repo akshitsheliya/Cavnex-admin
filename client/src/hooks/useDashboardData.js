@@ -43,6 +43,8 @@ const useDashboardData = () => {
           api.get("/clients?limit=100"),
           api.get("/projects?limit=100"),
           api.get("/invoices?limit=100"),
+          api.get("/leads/reminders"),
+          api.get("/leads/reminders/stats"),
         ]),
         Promise.allSettled([
           leadService.getLeadStats(),

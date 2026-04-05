@@ -388,28 +388,37 @@ const updateLeadStatus = async (req, res, next) => {
         message: "Lead not found",
       });
     }
- if (status === "proposal_pending" && !lead.reminder?.date) {
+
+    // ✅ Auto-set reminder for proposal_pending
+    if (status === "proposal_pending" && !lead.reminder?.date) {
       const reminderDate = new Date();
-      reminderDate.setHours(reminderDate.getHours() + 24); // 24 hours from now
+      reminderDate.setHours(reminderDate.getHours() + 24);
 
       lead.reminder = {
         date: reminderDate,
-        note: "Send proposal within 24 hours for better conversion rate",
+        note: "⏰ Send proposal within 24 hours for better conversion rate!",
         status: "pending",
         createdAt: new Date(),
         completedAt: null,
       };
+
+      console.log("✅ Auto-reminder set for proposal_pending");
     }
 
     lead.status = status;
     lead.updatedAt = new Date();
 
     await lead.save();
-    const updatedLead = await Lead.findByIdAndUpdate(
-      req.params.id,
-      { status, updatedAt: new Date() },
-      { new: true }
-    );
+
+    // ✅ Return complete lead data with reminder
+    const updatedLead = await Lead.findById(req.params.id)
+      .populate("assignedTo", "name email")
+      .lean();
+
+    console.log("✅ Status updated, returning lead with reminder:", {
+      status: updatedLead.status,
+      hasReminder: !!updatedLead.reminder?.date,
+    });
 
     res.status(200).json({
       success: true,
@@ -417,10 +426,10 @@ const updateLeadStatus = async (req, res, next) => {
       data: updatedLead,
     });
   } catch (error) {
+    console.error("❌ updateLeadStatus error:", error);
     next(error);
   }
 };
-
 const convertToClient = async (req, res, next) => {
   try {
     const lead = await Lead.findById(req.params.id);

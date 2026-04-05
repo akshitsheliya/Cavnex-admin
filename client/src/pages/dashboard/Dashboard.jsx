@@ -20,12 +20,13 @@ import {
   formatTimeAgo,
   generateActivities,
 } from "../../utils/dashboardHelpers";
+import useNotifications from "../../hooks/useNotifications";
+import { eventBus, EVENTS } from "../../../../server/utils/eventBus";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { loading, data, stats, revenueData, refresh } = useDashboardData();
-
   const [chartPeriod, setChartPeriod] = useState("year");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedActivity, setSelectedActivity] = useState(null);
@@ -33,7 +34,7 @@ const Dashboard = () => {
   const [showRevenueModal, setShowRevenueModal] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
   const [selectedChartData, setSelectedChartData] = useState(null);
-
+  const { refresh: refreshNotifications } = useNotifications();
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -82,6 +83,26 @@ const Dashboard = () => {
     }
     return revenueData.monthly || [];
   }, [chartPeriod, revenueData]);
+
+  useEffect(() => {
+    const handleReminderChange = () => {
+      console.log("🔔 Dashboard: Reminder changed, refreshing stats");
+      fetchDashboardData(); // Your existing fetch function
+      refreshNotifications(); // Refresh notification context
+    };
+
+    eventBus.on(EVENTS.REMINDER_CREATED, handleReminderChange);
+    eventBus.on(EVENTS.REMINDER_UPDATED, handleReminderChange);
+    eventBus.on(EVENTS.REMINDER_DELETED, handleReminderChange);
+    eventBus.on(EVENTS.LEAD_STATUS_CHANGED, handleReminderChange);
+
+    return () => {
+      eventBus.off(EVENTS.REMINDER_CREATED, handleReminderChange);
+      eventBus.off(EVENTS.REMINDER_UPDATED, handleReminderChange);
+      eventBus.off(EVENTS.REMINDER_DELETED, handleReminderChange);
+      eventBus.off(EVENTS.LEAD_STATUS_CHANGED, handleReminderChange);
+    };
+  }, [refreshNotifications]);
 
   const chartMaxValue = useMemo(
     () => Math.max(...chartData.map((d) => d.total || 0), 1),
