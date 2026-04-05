@@ -101,6 +101,8 @@ const LeadDetail = () => {
       setStatusUpdating(true);
       await leadService.updateLeadStatus(id, newStatus);
       setLead((prev) => ({ ...prev, status: newStatus }));
+      // Refetch lead to get updated reminder (backend sets it automatically)
+      // await fetchLead();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update status");
       throw err;
@@ -109,6 +111,22 @@ const LeadDetail = () => {
     }
   };
 
+  const handleAutoReminder = async () => {
+    try {
+      const reminderDate = new Date();
+      reminderDate.setHours(reminderDate.getHours() + 24);
+
+      await leadService.setReminder(id, {
+        date: reminderDate.toISOString().split("T")[0],
+        note: "⏰ Send proposal within 24 hours for better conversion rate!",
+      });
+
+      // Refetch to update UI
+      await fetchLead();
+    } catch (err) {
+      console.error("Failed to set auto reminder:", err);
+    }
+  };
   const handleReminderStatusChange = async (status) => {
     try {
       setReminderLoading(true);
@@ -339,6 +357,7 @@ const LeadDetail = () => {
         <LeadStatusFlow
           currentStatus={lead.status}
           onStatusChange={handleStatusChange}
+          onAutoReminder={handleAutoReminder}
           disabled={lead.convertedToClient || statusUpdating}
         />
       </Card>
