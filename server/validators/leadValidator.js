@@ -223,9 +223,34 @@ const leadIdValidator = [
   param("id").isMongoId().withMessage("Invalid lead ID"),
 ];
 
+const setReminderValidator = [
+  param("id").isMongoId().withMessage("Invalid lead ID"),
+  body("date")
+    .notEmpty()
+    .withMessage("Reminder date is required")
+    .isISO8601()
+    .withMessage("Invalid date format"),
+  body("note")
+    .optional()
+    .isString()
+    .isLength({ max: 500 })
+    .withMessage("Note cannot exceed 500 characters"),
+];
+
+const updateReminderStatusValidator = [
+  param("id").isMongoId().withMessage("Invalid lead ID"),
+  body("status")
+    .notEmpty()
+    .withMessage("Status is required")
+    .isIn(["pending", "completed", "dismissed"])
+    .withMessage("Invalid status"),
+];
+
 module.exports = {
   createLeadValidator,
   updateLeadValidator,
   getLeadsValidator,
   leadIdValidator,
+  setReminderValidator,
+  updateReminderStatusValidator,
 };

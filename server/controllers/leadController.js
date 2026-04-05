@@ -542,6 +542,282 @@ const getLeadStats = async (req, res, next) => {
     next(error);
   }
 };
+
+const getReminders = async (req, res, next) => {
+  try {
+    const { organization } = req;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const reminders = await Lead.find({
+      organization: organization._id,
+      "reminder.date": { $lte: tomorrow },
+      "reminder.status": "pending",
+    })
+      .select("leadName email phone company reminder status createdAt")
+      .sort({ "reminder.date": 1 })
+      .limit(50)
+      .lean();
+
+    const categorizedReminders = {
+      overdue: [],
+      today: [],
+      upcoming: [],
+    };
+
+    reminders.forEach((lead) => {
+      const reminderDate = new Date(lead.reminder.date);
+      reminderDate.setHours(0, 0, 0, 0);
+
+      if (reminderDate < today) {
+        categorizedReminders.overdue.push(lead);
+      } else if (reminderDate.getTime() === today.getTime()) {
+        categorizedReminders.today.push(lead);
+      } else {
+        categorizedReminders.upcoming.push(lead);
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: categorizedReminders,
+      total:
+        categorizedReminders.overdue.length +
+        categorizedReminders.today.length +
+        categorizedReminders.upcoming.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllReminders = async (req, res, next) => {
+  try {
+    const { organization } = req;
+    const { status, startDate, endDate, page = 1, limit = 20 } = req.query;
+
+    const query = {
+      organization: organization._id,
+      "reminder.date": { $ne: null },
+    };
+
+    if (status) {
+      query["reminder.status"] = status;
+    }
+
+    if (startDate || endDate) {
+      query["reminder.date"] = {};
+      if (startDate) {
+        query["reminder.date"].$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query["reminder.date"].$lte = new Date(endDate);
+      }
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [reminders, total] = await Promise.all([
+      Lead.find(query)
+        .select("leadName email phone company reminder status createdAt")
+        .sort({ "reminder.date": -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Lead.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: reminders,
+      pagination: {
+        current: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const setReminder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { date, note } = req.body;
+    const { organization } = req;
+
+    const lead = await Lead.findOne({
+      _id: id,
+      organization: organization._id,
+    });
+
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    lead.reminder = {
+      date: new Date(date),
+      note: note || "",
+      status: "pending",
+      createdAt: new Date(),
+      completedAt: null,
+    };
+
+    await lead.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Reminder set successfully",
+      data: lead,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateReminderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const { organization } = req;
+
+    if (!["pending", "completed", "dismissed"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status. Must be pending, completed, or dismissed",
+      });
+    }
+
+    const lead = await Lead.findOne({
+      _id: id,
+      organization: organization._id,
+    });
+
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    if (!lead.reminder || !lead.reminder.date) {
+      return res.status(400).json({
+        success: false,
+        message: "No reminder set for this lead",
+      });
+    }
+
+    lead.reminder.status = status;
+
+    if (status === "completed" || status === "dismissed") {
+      lead.reminder.completedAt = new Date();
+    } else {
+      lead.reminder.completedAt = null;
+    }
+
+    await lead.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Reminder marked as ${status}`,
+      data: lead,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteReminder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { organization } = req;
+
+    const lead = await Lead.findOne({
+      _id: id,
+      organization: organization._id,
+    });
+
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found",
+      });
+    }
+
+    lead.reminder = {
+      date: null,
+      note: "",
+      status: "pending",
+      createdAt: null,
+      completedAt: null,
+    };
+
+    await lead.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Reminder deleted successfully",
+      data: lead,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getReminderStats = async (req, res, next) => {
+  try {
+    const { organization } = req;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [overdueCount, todayCount, pendingCount, completedCount] =
+      await Promise.all([
+        Lead.countDocuments({
+          organization: organization._id,
+          "reminder.date": { $lt: today },
+          "reminder.status": "pending",
+        }),
+        Lead.countDocuments({
+          organization: organization._id,
+          "reminder.date": {
+            $gte: today,
+            $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          },
+          "reminder.status": "pending",
+        }),
+        Lead.countDocuments({
+          organization: organization._id,
+          "reminder.status": "pending",
+          "reminder.date": { $ne: null },
+        }),
+        Lead.countDocuments({
+          organization: organization._id,
+          "reminder.status": "completed",
+        }),
+      ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        overdue: overdueCount,
+        today: todayCount,
+        pending: pendingCount,
+        completed: completedCount,
+        total: overdueCount + todayCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   getLeads,
   getLead,
@@ -551,4 +827,10 @@ module.exports = {
   updateLeadStatus,
   convertToClient,
   getLeadStats,
+  getReminders,
+  getAllReminders,
+  setReminder,
+  updateReminderStatus,
+  deleteReminder,
+  getReminderStats,
 };

@@ -1,4 +1,3 @@
-// LeadForm.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Form, Select, DatePicker, Input as AntInput, message } from "antd";
@@ -6,8 +5,7 @@ import dayjs from "dayjs";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import PhoneInput from "../../components/common/PhoneInput";
-import Loader from "../../components/common/Loader";
+import ReminderInput from "../../components/leads/ReminderInput";
 import leadService from "../../services/leadService";
 
 const { TextArea } = AntInput;
@@ -22,6 +20,10 @@ const LeadForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [reminderData, setReminderData] = useState({
+    date: "",
+    note: "",
+  });
 
   const sourceOptions = [
     { value: "website", label: "Website" },
@@ -55,6 +57,7 @@ const LeadForm = () => {
       setLoading(true);
       const response = await leadService.getLead(id);
       const lead = response.data;
+
       form.setFieldsValue({
         leadName: lead.leadName || "",
         businessName: lead.businessName || "",
@@ -68,6 +71,13 @@ const LeadForm = () => {
         notes: lead.notes || "",
         followUpDate: lead.followUpDate ? dayjs(lead.followUpDate) : null,
       });
+
+      if (lead.reminder && lead.reminder.date) {
+        setReminderData({
+          date: new Date(lead.reminder.date).toISOString().split("T")[0],
+          note: lead.reminder.note || "",
+        });
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch lead");
     } finally {
@@ -89,6 +99,15 @@ const LeadForm = () => {
           : null,
       };
 
+      if (reminderData.date) {
+        dataToSubmit.reminder = {
+          date: reminderData.date,
+          note: reminderData.note || "",
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        };
+      }
+
       if (isEditMode) {
         await leadService.updateLead(id, dataToSubmit);
         message.success("Lead updated successfully");
@@ -106,12 +125,15 @@ const LeadForm = () => {
   };
 
   if (loading) {
-    return <Loader />;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon-green"></div>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-0">
-      {/* Back navigation & heading */}
       <div className="mb-4 sm:mb-6">
         <button
           onClick={() => navigate("/leads")}
@@ -142,7 +164,6 @@ const LeadForm = () => {
         </p>
       </div>
 
-      {/* Error Alert */}
       {error && (
         <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2 sm:gap-3">
           <svg
@@ -172,7 +193,6 @@ const LeadForm = () => {
         }}
         className="lead-form"
       >
-        {/* Contact Information Card */}
         <Card title="Contact Information" className="mb-4 sm:mb-5 lg:mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4">
             <Form.Item
@@ -265,7 +285,6 @@ const LeadForm = () => {
           </div>
         </Card>
 
-        {/* Lead Details Card */}
         <Card title="Lead Details" className="mb-4 sm:mb-5 lg:mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4">
             <Form.Item
@@ -359,7 +378,14 @@ const LeadForm = () => {
           </Form.Item>
         </Card>
 
-        {/* Action Buttons */}
+        <Card title="Reminder (Optional)" className="mb-4 sm:mb-5 lg:mb-6">
+          <ReminderInput
+            value={reminderData}
+            onChange={setReminderData}
+            disabled={submitting}
+          />
+        </Card>
+
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
           <Button
             type="button"
@@ -446,9 +472,6 @@ const LeadForm = () => {
         .custom-dropdown .ant-select-item-option-selected {
           background: rgba(0, 255, 136, 0.1) !important;
         }
-        // .custom-datepicker-dropdown {
-        //   background: #1a1a2e !important;
-        // }
         .custom-datepicker-dropdown .ant-picker-panel {
           background: #1a1a2e !important;
           border-color: rgba(255, 255, 255, 0.1) !important;

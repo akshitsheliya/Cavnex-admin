@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import ScrollToTop from "./components/common/ScrollToTop";
 
 import MainLayout from "./layouts/MainLayout";
@@ -54,59 +55,62 @@ const NotFound = () => (
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <Routes>
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
-          </Route>
+      <NotificationProvider>
+        <Router>
+          <ScrollToTop />
+          <Routes>
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+            </Route>
 
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
 
-            <Route path="/leads" element={<LeadList />} />
-            <Route path="/leads/new" element={<LeadForm />} />
-            <Route path="/leads/:id" element={<LeadDetail />} />
-            <Route path="/leads/:id/edit" element={<LeadForm />} />
+              <Route path="/leads" element={<LeadList />} />
+              <Route path="/leads/new" element={<LeadForm />} />
+              <Route path="/leads/:id" element={<LeadDetail />} />
+              <Route path="/leads/:id/edit" element={<LeadForm />} />
 
-            <Route path="/clients" element={<ClientList />} />
-            <Route path="/clients/new" element={<ClientForm />} />
-            <Route path="/clients/:id" element={<ClientDetail />} />
-            <Route path="/clients/:id/edit" element={<ClientForm />} />
+              <Route path="/clients" element={<ClientList />} />
+              <Route path="/clients/new" element={<ClientForm />} />
+              <Route path="/clients/:id" element={<ClientDetail />} />
+              <Route path="/clients/:id/edit" element={<ClientForm />} />
 
-            <Route path="/projects" element={<ProjectList />} />
-            <Route path="/projects/new" element={<ProjectForm />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/projects/:id/edit" element={<ProjectForm />} />
+              <Route path="/projects" element={<ProjectList />} />
+              <Route path="/projects/new" element={<ProjectForm />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/projects/:id/edit" element={<ProjectForm />} />
 
-            <Route path="/proposals" element={<ProposalList />} />
-            <Route path="/proposals/new" element={<ProposalForm />} />
-            <Route path="/proposals/:id" element={<ProposalView />} />
-            <Route path="/proposals/:id/edit" element={<ProposalForm />} />
+              <Route path="/proposals" element={<ProposalList />} />
+              <Route path="/proposals/new" element={<ProposalForm />} />
+              <Route path="/proposals/:id" element={<ProposalView />} />
+              <Route path="/proposals/:id/edit" element={<ProposalForm />} />
 
-            <Route path="/agreements" element={<AgreementList />} />
-            <Route path="/agreements/new" element={<AgreementForm />} />
-            <Route path="/agreements/:id" element={<AgreementView />} />
-            <Route path="/agreements/:id/edit" element={<AgreementForm />} />
+              <Route path="/agreements" element={<AgreementList />} />
+              <Route path="/agreements/new" element={<AgreementForm />} />
+              <Route path="/agreements/:id" element={<AgreementView />} />
+              <Route path="/agreements/:id/edit" element={<AgreementForm />} />
 
-            <Route path="/invoices" element={<InvoiceList />} />
-            <Route path="/invoices/new" element={<InvoiceForm />} />
-            <Route path="/invoices/:id" element={<InvoiceView />} />
-            <Route path="/invoices/:id/edit" element={<InvoiceForm />} />
+              <Route path="/invoices" element={<InvoiceList />} />
+              <Route path="/invoices/new" element={<InvoiceForm />} />
+              <Route path="/invoices/:id" element={<InvoiceView />} />
+              <Route path="/invoices/:id/edit" element={<InvoiceForm />} />
 
-            <Route path="/templates" element={<TemplateList />} />
-            <Route path="/templates/new" element={<TemplateForm />} />
-            <Route path="/templates/:id" element={<TemplateView />} />
-            <Route path="/templates/:id/edit" element={<TemplateForm />} />
+              <Route path="/templates" element={<TemplateList />} />
+              <Route path="/templates/new" element={<TemplateForm />} />
+              <Route path="/templates/:id" element={<TemplateView />} />
+              <Route path="/templates/:id/edit" element={<TemplateForm />} />
 
-            <Route path="/pricing" element={<PricingCalculator />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
+              <Route path="/pricing" element={<PricingCalculator />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

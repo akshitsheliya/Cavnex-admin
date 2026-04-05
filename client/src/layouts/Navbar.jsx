@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { NotificationBell } from "../components/common";
 
 const routeLabels = {
   "/dashboard": "Dashboard",
@@ -28,11 +29,13 @@ const getPageLabel = (pathname) => {
   return baseLabel;
 };
 
-const Navbar = ({ onMenuClick }) => {
-  const { user, logout } = useAuth();
+const Navbar = ({ onMenuClick, isSidebarOpen }) => {
+  const navigate = useNavigate();
   const location = useLocation();
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const { user, logout } = useAuth();
+
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileRef = useRef(null);
 
   const pageLabel = getPageLabel(location.pathname);
   const isSubPage =
@@ -43,31 +46,15 @@ const Navbar = ({ onMenuClick }) => {
       segments[0].charAt(0).toUpperCase() + segments[0].slice(1)
     : "Dashboard";
 
-  const notifications = [
-    {
-      id: 1,
-      title: "New lead added",
-      desc: "Acme Corporation just submitted a form",
-      time: "2 min ago",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Invoice overdue",
-      desc: "Invoice #INV-0042 is 3 days overdue",
-      time: "1 hour ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "Project updated",
-      desc: "E-commerce Platform moved to Review",
-      time: "3 hours ago",
-      unread: false,
-    },
-  ];
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="sticky top-0 z-10 bg-black/80 backdrop-blur-xl border-b border-white/5">
@@ -113,23 +100,26 @@ const Navbar = ({ onMenuClick }) => {
               </>
             )}
             {segments.length > 1 && (
-              <svg
-                className="w-4 h-4 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <>
+                <svg
+                  className="w-4 h-4 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+                <span className="text-white font-medium">{pageLabel}</span>
+              </>
             )}
-            <span className="text-white font-medium">
-              {segments.length <= 1 === pageLabel}
-            </span>
+            {segments.length === 1 && (
+              <span className="text-white font-medium">{pageLabel}</span>
+            )}
           </div>
 
           <div className="md:hidden">
@@ -140,8 +130,10 @@ const Navbar = ({ onMenuClick }) => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <NotificationBell />
+
           <button
-            onClick={() => (window.location.href = "/settings")}
+            onClick={() => navigate("/settings")}
             className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             title="Settings"
           >

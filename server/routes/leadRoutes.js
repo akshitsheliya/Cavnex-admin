@@ -9,9 +9,15 @@ const {
   updateLeadStatus,
   convertToClient,
   getLeadStats,
+  getReminders,
+  getAllReminders,
+  setReminder,
+  updateReminderStatus,
+  deleteReminder,
+  getReminderStats,
 } = require("../controllers/leadController");
 const { protect } = require("../middleware/authMiddleware");
-const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
+const { attachOrganization } = require("../middleware/organizationMiddleware");
 const {
   createLeadValidator,
   updateLeadValidator,
@@ -19,11 +25,13 @@ const {
   leadIdValidator,
 } = require("../validators/leadValidator");
 
-// ✅ Apply both middlewares
 router.use(protect);
-router.use(attachOrganization); // ✅ NEW LINE
+router.use(attachOrganization);
 
 router.get("/stats", getLeadStats);
+router.get("/reminders/stats", getReminderStats);
+router.get("/reminders/all", getAllReminders);
+router.get("/reminders", getReminders);
 
 router
   .route("/")
@@ -39,5 +47,9 @@ router
 router.patch("/:id/status", leadIdValidator, updateLeadStatus);
 
 router.post("/:id/convert", leadIdValidator, convertToClient);
+
+router.post("/:id/reminder", leadIdValidator, setReminder);
+router.patch("/:id/reminder/status", leadIdValidator, updateReminderStatus);
+router.delete("/:id/reminder", leadIdValidator, deleteReminder);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-// LeadDetail.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Modal, message } from "antd";
@@ -7,6 +6,7 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Loader from "../../components/common/Loader";
 import LeadStatusBadge from "../../components/leads/LeadStatusBadge";
+import ReminderDisplay from "../../components/leads/ReminderDisplay";
 import leadService from "../../services/leadService";
 
 const { confirm } = Modal;
@@ -34,6 +34,7 @@ const LeadDetail = () => {
   const [error, setError] = useState("");
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState(false);
 
   useEffect(() => {
     fetchLead();
@@ -102,6 +103,53 @@ const LeadDetail = () => {
     }
   };
 
+  const handleReminderStatusChange = async (status) => {
+    try {
+      setReminderLoading(true);
+      await leadService.updateReminderStatus(id, status);
+      await fetchLead();
+      message.success(
+        `Reminder ${status === "completed" ? "completed" : "dismissed"}`
+      );
+    } catch (err) {
+      console.error("Failed to update reminder:", err);
+      message.error("Failed to update reminder");
+    } finally {
+      setReminderLoading(false);
+    }
+  };
+
+  const handleReminderDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this reminder?"))
+      return;
+
+    try {
+      setReminderLoading(true);
+      await leadService.deleteReminder(id);
+      await fetchLead();
+      message.success("Reminder deleted successfully");
+    } catch (err) {
+      console.error("Failed to delete reminder:", err);
+      message.error("Failed to delete reminder");
+    } finally {
+      setReminderLoading(false);
+    }
+  };
+
+  const handleReminderEdit = async (reminderData) => {
+    try {
+      setReminderLoading(true);
+      await leadService.setReminder(id, reminderData);
+      await fetchLead();
+      message.success("Reminder updated successfully");
+    } catch (err) {
+      console.error("Failed to update reminder:", err);
+      message.error("Failed to update reminder");
+    } finally {
+      setReminderLoading(false);
+    }
+  };
+
   const formatDate = (date) =>
     new Date(date).toLocaleDateString("en-IN", {
       day: "numeric",
@@ -154,7 +202,6 @@ const LeadDetail = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 lg:space-y-6 px-2 sm:px-0">
-      {/* Back button */}
       <button
         onClick={() => navigate("/leads")}
         className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-white transition-colors group"
@@ -175,7 +222,6 @@ const LeadDetail = () => {
         <span className="text-xs sm:text-sm">Back to Leads</span>
       </button>
 
-      {/* Error Banner */}
       {error && (
         <div className="p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2 sm:gap-3">
           <svg
@@ -195,10 +241,8 @@ const LeadDetail = () => {
         </div>
       )}
 
-      {/* Hero Card */}
       <div className="glass-card p-3 sm:p-4 lg:p-6">
         <div className="flex flex-col gap-3 sm:gap-4">
-          {/* Avatar + name + status */}
           <div className="flex items-start gap-3 sm:gap-4 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
               <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
@@ -223,7 +267,6 @@ const LeadDetail = () => {
             </div>
           </div>
 
-          {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t border-white/10 sm:border-0">
             <Button
               variant="outline"
@@ -296,11 +339,8 @@ const LeadDetail = () => {
         </div>
       </div>
 
-      {/* Body Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
-        {/* Left column: info cards */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-5 lg:space-y-6">
-          {/* Contact Information */}
           <Card title="Contact Information">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
               <InfoField label="Email">
@@ -331,7 +371,6 @@ const LeadDetail = () => {
             </div>
           </Card>
 
-          {/* Lead Details */}
           <Card title="Lead Details">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
               <InfoField label="Source">
@@ -378,9 +417,18 @@ const LeadDetail = () => {
           </Card>
         </div>
 
-        {/* Right column: status + quick actions */}
         <div className="space-y-4 sm:space-y-5 lg:space-y-6">
-          {/* Update Status */}
+          <Card title="Reminder">
+            <ReminderDisplay
+              reminder={lead.reminder}
+              leadId={lead._id}
+              onStatusChange={handleReminderStatusChange}
+              onDelete={handleReminderDelete}
+              onEdit={handleReminderEdit}
+              loading={reminderLoading}
+            />
+          </Card>
+
           <Card title="Update Status">
             <div className="space-y-1.5 sm:space-y-2">
               {statusOptions.map((option) => (
@@ -419,7 +467,6 @@ const LeadDetail = () => {
             </div>
           </Card>
 
-          {/* Quick Actions */}
           <Card title="Quick Actions">
             <div className="space-y-2 sm:space-y-2.5">
               <a href={`mailto:${lead.email}`} className={quickActionBase}>
@@ -500,7 +547,6 @@ const LeadDetail = () => {
         </div>
       </div>
 
-      {/* Convert Modal */}
       <Modal
         open={showConvertModal}
         onCancel={() => setShowConvertModal(false)}

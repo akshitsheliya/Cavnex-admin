@@ -46,6 +46,38 @@ const leadService = {
     const response = await api.get("/leads/stats");
     return response.data;
   },
+  getReminders: async () => {
+    const response = await api.get("/leads/reminders");
+    return response.data;
+  },
+
+  getAllReminders: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await api.get(`/leads/reminders/all?${queryString}`);
+    return response.data;
+  },
+
+  getReminderStats: async () => {
+    const response = await api.get("/leads/reminders/stats");
+    return response.data;
+  },
+
+  setReminder: async (leadId, reminderData) => {
+    const response = await api.post(`/leads/${leadId}/reminder`, reminderData);
+    return response.data;
+  },
+
+  updateReminderStatus: async (leadId, status) => {
+    const response = await api.patch(`/leads/${leadId}/reminder/status`, {
+      status,
+    });
+    return response.data;
+  },
+
+  deleteReminder: async (leadId) => {
+    const response = await api.delete(`/leads/${leadId}/reminder`);
+    return response.data;
+  },
 };
 
 export default leadService;

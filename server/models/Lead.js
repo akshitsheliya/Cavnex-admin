@@ -96,6 +96,30 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Client",
     },
+    reminder: {
+      date: {
+        type: Date,
+        default: null,
+      },
+      note: {
+        type: String,
+        trim: true,
+        maxlength: [500, "Reminder note cannot exceed 500 characters"],
+      },
+      status: {
+        type: String,
+        enum: ["pending", "completed", "dismissed"],
+        default: "pending",
+      },
+      createdAt: {
+        type: Date,
+        default: null,
+      },
+      completedAt: {
+        type: Date,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,
@@ -110,6 +134,8 @@ leadSchema.index({ source: 1 });
 leadSchema.index({ createdAt: -1 });
 leadSchema.index({ organization: 1, createdAt: -1 });
 leadSchema.index({ source: 1, createdAt: -1 }); // ✅ For public leads query
+leadSchema.index({ "reminder.date": 1, "reminder.status": 1 });
+leadSchema.index({ organization: 1, "reminder.date": 1, "reminder.status": 1 });
 
 // Static methods for statistics
 leadSchema.statics.getStatusCounts = async function (organizationId, userId) {
