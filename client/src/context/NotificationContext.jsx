@@ -40,19 +40,12 @@ export const NotificationProvider = ({ children }) => {
       if (showLoading) setLoading(true);
       setError(null);
 
-      console.log("🔔 Fetching reminders...");
-
       const [remindersResponse, statsResponse] = await Promise.all([
         leadService.getReminders(),
         leadService.getReminderStats(),
       ]);
 
       if (!isMountedRef.current) return;
-
-      console.log("✅ Reminders fetched:", {
-        reminders: remindersResponse.data,
-        stats: statsResponse.data,
-      });
 
       if (remindersResponse.success) {
         setReminders(remindersResponse.data);
@@ -132,7 +125,6 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const refresh = useCallback(() => {
-    console.log("🔄 Manual refresh triggered");
     fetchReminders(true);
   }, [fetchReminders]);
 
@@ -142,7 +134,6 @@ export const NotificationProvider = ({ children }) => {
 
     const token = localStorage.getItem("token");
     if (token) {
-      console.log("🚀 Initial reminder fetch");
       fetchReminders(true);
     }
 
@@ -156,16 +147,12 @@ export const NotificationProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    console.log("⏰ Setting up auto-refresh (60s interval)");
-
     intervalRef.current = setInterval(() => {
-      console.log("🔄 Auto-refresh triggered");
       fetchReminders(false);
     }, 60000);
 
     return () => {
       if (intervalRef.current) {
-        console.log("🛑 Clearing auto-refresh interval");
         clearInterval(intervalRef.current);
       }
     };
@@ -174,23 +161,18 @@ export const NotificationProvider = ({ children }) => {
   // ✅ Listen to reminder events from other components
   useEffect(() => {
     const handleReminderUpdate = (data) => {
-      console.log("🔔 Reminder updated event received:", data);
       fetchReminders(false);
     };
 
     const handleReminderCreate = (data) => {
-      console.log("🔔 Reminder created event received:", data);
       fetchReminders(false);
     };
 
     const handleReminderDelete = (data) => {
-      console.log("🔔 Reminder deleted event received:", data);
       fetchReminders(false);
     };
 
     const handleLeadStatusChange = (data) => {
-      console.log("🔔 Lead status changed event received:", data);
-      // Refresh if status is proposal_pending (auto-reminder)
       if (data.status === "proposal_pending") {
         fetchReminders(false);
       }
@@ -214,10 +196,8 @@ export const NotificationProvider = ({ children }) => {
     const handleStorageChange = (e) => {
       if (e.key === "token") {
         if (e.newValue) {
-          console.log("🔑 Token added, fetching reminders");
           fetchReminders(true);
         } else {
-          console.log("🔑 Token removed, clearing reminders");
           setReminders({ overdue: [], today: [], upcoming: [] });
           setStats({
             overdue: 0,

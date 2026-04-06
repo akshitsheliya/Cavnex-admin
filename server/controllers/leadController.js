@@ -2,7 +2,6 @@ const Lead = require("../models/Lead");
 const { validationResult } = require("express-validator");
 
 const getLeads = async (req, res, next) => {
-  console.log("🔥🔥🔥 GET LEADS CALLED 🔥🔥🔥");
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -68,9 +67,6 @@ const getLeads = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const sortOptions = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
 
-    console.log("📊 Lead Query:", JSON.stringify(query, null, 2));
-    console.log("🔑 Organization ID:", req.organizationId);
-
     const [leads, total] = await Promise.all([
       Lead.find(query)
         .sort(sortOptions)
@@ -80,9 +76,6 @@ const getLeads = async (req, res, next) => {
         .lean(),
       Lead.countDocuments(query),
     ]);
-
-    console.log(`✅ Found ${total} total leads`);
-    console.log(`📄 Returning ${leads.length} leads on page ${page}`);
 
     res.status(200).json({
       success: true,
@@ -401,8 +394,6 @@ const updateLeadStatus = async (req, res, next) => {
         createdAt: new Date(),
         completedAt: null,
       };
-
-      console.log("✅ Auto-reminder set for proposal_pending");
     }
 
     lead.status = status;
@@ -410,15 +401,9 @@ const updateLeadStatus = async (req, res, next) => {
 
     await lead.save();
 
-    // ✅ Return complete lead data with reminder
     const updatedLead = await Lead.findById(req.params.id)
       .populate("assignedTo", "name email")
       .lean();
-
-    console.log("✅ Status updated, returning lead with reminder:", {
-      status: updatedLead.status,
-      hasReminder: !!updatedLead.reminder?.date,
-    });
 
     res.status(200).json({
       success: true,
@@ -575,12 +560,6 @@ const getReminders = async (req, res, next) => {
     const orgId = req.organizationId || req.organization?._id;
     const userId = req.user._id;
 
-    console.log("🔍 getReminders called:", {
-      orgId,
-      userId,
-      hasOrg: !!req.organization,
-    });
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -614,15 +593,11 @@ const getReminders = async (req, res, next) => {
       "reminder.status": "pending",
     };
 
-    console.log("📊 Reminder Query:", JSON.stringify(query, null, 2));
-
     const reminders = await Lead.find(query)
       .select("leadName email phone businessName reminder status createdAt")
       .sort({ "reminder.date": 1 })
       .limit(50)
       .lean();
-
-    console.log(`✅ Found ${reminders.length} reminders`);
 
     const categorizedReminders = {
       overdue: [],
@@ -667,8 +642,6 @@ const getAllReminders = async (req, res, next) => {
     const userId = req.user._id;
     const { status, startDate, endDate, page = 1, limit = 20 } = req.query;
 
-    console.log("🔍 getAllReminders called:", { orgId, userId, status });
-
     let matchQuery = {};
 
     if (orgId) {
@@ -710,8 +683,6 @@ const getAllReminders = async (req, res, next) => {
       }
     }
 
-    console.log("📊 Query:", JSON.stringify(query, null, 2));
-
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const [reminders, total] = await Promise.all([
@@ -723,10 +694,6 @@ const getAllReminders = async (req, res, next) => {
         .lean(),
       Lead.countDocuments(query),
     ]);
-
-    console.log(
-      `✅ Found ${total} total reminders, returning ${reminders.length}`
-    );
 
     res.status(200).json({
       success: true,
@@ -753,8 +720,6 @@ const getReminderStats = async (req, res, next) => {
     const orgId = req.organizationId || req.organization?._id;
     const userId = req.user._id;
 
-    console.log("🔍 getReminderStats called:", { orgId, userId });
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -777,8 +742,6 @@ const getReminderStats = async (req, res, next) => {
         ],
       };
     }
-
-    console.log("📊 Stats Query:", JSON.stringify(matchQuery, null, 2));
 
     const [overdueCount, todayCount, pendingCount, completedCount] =
       await Promise.all([
@@ -806,13 +769,6 @@ const getReminderStats = async (req, res, next) => {
         }),
       ]);
 
-    console.log("✅ Stats:", {
-      overdueCount,
-      todayCount,
-      pendingCount,
-      completedCount,
-    });
-
     res.status(200).json({
       success: true,
       data: {
@@ -839,8 +795,6 @@ const setReminder = async (req, res, next) => {
     const { date, note } = req.body;
     const orgId = req.organizationId || req.organization?._id;
     const userId = req.user._id;
-
-    console.log("🔍 setReminder called:", { id, orgId, userId, date, note });
 
     if (!date) {
       return res.status(400).json({
@@ -892,8 +846,6 @@ const setReminder = async (req, res, next) => {
 
     await lead.save();
 
-    console.log("✅ Reminder set successfully");
-
     res.status(200).json({
       success: true,
       message: "Reminder set successfully",
@@ -915,13 +867,6 @@ const updateReminderStatus = async (req, res, next) => {
     const { status } = req.body;
     const orgId = req.organizationId || req.organization?._id;
     const userId = req.user._id;
-
-    console.log("🔍 updateReminderStatus called:", {
-      id,
-      status,
-      orgId,
-      userId,
-    });
 
     if (!["pending", "completed", "dismissed"].includes(status)) {
       return res.status(400).json({
@@ -972,8 +917,6 @@ const updateReminderStatus = async (req, res, next) => {
 
     await lead.save();
 
-    console.log("✅ Reminder status updated");
-
     res.status(200).json({
       success: true,
       message: `Reminder marked as ${status}`,
@@ -994,8 +937,6 @@ const deleteReminder = async (req, res, next) => {
     const { id } = req.params;
     const orgId = req.organizationId || req.organization?._id;
     const userId = req.user._id;
-
-    console.log("🔍 deleteReminder called:", { id, orgId, userId });
 
     let matchQuery = { _id: id };
 
@@ -1031,8 +972,6 @@ const deleteReminder = async (req, res, next) => {
     };
 
     await lead.save();
-
-    console.log("✅ Reminder deleted");
 
     res.status(200).json({
       success: true,

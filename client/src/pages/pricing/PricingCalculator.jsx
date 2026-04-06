@@ -387,7 +387,7 @@ const PricingCalculator = () => {
       calculation,
       createdAt: new Date().toISOString(),
     };
-    console.log("Proposal Data:", proposalData);
+
     alert("Proposal Generated! Check console for data.");
   };
 

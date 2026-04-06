@@ -60,8 +60,6 @@ const createContactLead = async (req, res) => {
     // Create the lead
     const lead = await Lead.create(leadData);
 
-    console.log("✅ New contact lead created:", lead._id);
-
     // Send email notification (async, don't wait)
     sendNewLeadNotification({
       name: lead.leadName,

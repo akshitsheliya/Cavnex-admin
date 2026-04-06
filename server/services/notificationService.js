@@ -1,20 +1,12 @@
 const { Resend } = require("resend");
 
 const sendNewLeadNotification = async (leadData) => {
-  console.log("📧 Starting email notification with Resend...");
-
   try {
     if (!process.env.RESEND_API_KEY) {
-      console.log("⚠️ RESEND_API_KEY not configured");
       return { success: false, message: "Email service not configured" };
     }
 
     const { name, email, phone, message, source, createdAt } = leadData;
-
-    console.log(
-      "📧 Sending email to:",
-      process.env.NOTIFICATION_EMAIL || "cavnexstudio@gmail.com"
-    );
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -220,8 +212,6 @@ const sendNewLeadNotification = async (leadData) => {
       console.error("❌ Resend error:", error);
       return { success: false, error: error.message };
     }
-
-    console.log("✅ Email sent successfully via Resend:", data?.id || data);
 
     return { success: true, messageId: data?.id };
   } catch (error) {

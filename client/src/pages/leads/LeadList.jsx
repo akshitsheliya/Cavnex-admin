@@ -47,7 +47,6 @@ const LeadList = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleFilterChange = (key, value) => {
-    console.log("🔍 Filter changed:", key, value);
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPagination((prev) => ({ ...prev, current: 1 })); // Reset to page 1
   };
@@ -60,7 +59,7 @@ const LeadList = () => {
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
-      setError(""); // Clear previous errors
+      setError("");
 
       const params = {
         page: pagination.current,
@@ -68,23 +67,13 @@ const LeadList = () => {
         ...filters,
       };
 
-      // Remove empty filters
       Object.keys(params).forEach((key) => {
         if (!params[key]) delete params[key];
       });
 
-      console.log("📡 Fetching leads with params:", params);
-
       const response = await leadService.getLeads(params);
 
-      console.log("✅ Received leads:", {
-        count: response.data?.length,
-        pagination: response.pagination,
-      });
-
       setLeads(response.data || []);
-
-      // ✅ FIX: Properly update pagination
       if (response.pagination) {
         setPagination((prev) => ({
           ...prev,
@@ -169,7 +158,6 @@ const LeadList = () => {
     }
   };
   const handlePageChange = (newPage) => {
-    console.log("📄 Changing to page:", newPage);
     setPagination((prev) => ({
       ...prev,
       current: newPage,

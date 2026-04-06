@@ -28,7 +28,6 @@ router.get("/test-email", async (req, res) => {
   try {
     // First test config
     const configTest = await testEmailConfig();
-    console.log("📧 Email Config Test:", configTest);
 
     if (!configTest.success) {
       return res.json({

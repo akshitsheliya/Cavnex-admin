@@ -86,7 +86,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     const handleReminderChange = () => {
-      console.log("🔔 Dashboard: Reminder changed, refreshing stats");
       fetchDashboardData(); // Your existing fetch function
       refreshNotifications(); // Refresh notification context
     };

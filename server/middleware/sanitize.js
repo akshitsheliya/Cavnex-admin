@@ -1,7 +1,6 @@
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss");
 
-// MongoDB query injection prevention
 const sanitizeMongo = mongoSanitize({
   replaceWith: "_",
   onSanitize: ({ req, key }) => {
@@ -9,7 +8,6 @@ const sanitizeMongo = mongoSanitize({
   },
 });
 
-// XSS prevention - sanitize request body
 const sanitizeXSS = (req, res, next) => {
   if (req.body) {
     req.body = sanitizeObject(req.body);

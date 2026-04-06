@@ -48,7 +48,6 @@ const LeadDetail = () => {
     try {
       setLoading(true);
       const response = await leadService.getLead(id);
-      console.log("📦 Lead fetched:", response.data);
       setLead(response.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch lead");
@@ -99,16 +98,12 @@ const LeadDetail = () => {
   };
 
   const handleStatusChange = async (newStatus) => {
-    console.log("🔄 Status change requested:", newStatus);
-
     try {
       setStatusUpdating(true);
       setError("");
 
       await leadService.updateLeadStatus(id, newStatus);
-      console.log("✅ Status updated successfully to:", newStatus);
 
-      // ✅ Emit event for notification refresh
       eventBus.emit(EVENTS.LEAD_STATUS_CHANGED, {
         leadId: id,
         status: newStatus,
@@ -116,7 +111,7 @@ const LeadDetail = () => {
 
       // Refetch the lead to get complete updated data
       const response = await leadService.getLead(id);
-      console.log("📦 Lead refetched after status change:", response.data);
+
       setLead(response.data);
 
       return true;
@@ -129,10 +124,8 @@ const LeadDetail = () => {
     }
   };
 
-  // ✅ Auto reminder when proposal_pending is set
   const handleAutoReminder = async () => {
     try {
-      console.log("⏰ Setting auto reminder...");
       const reminderDate = new Date();
       reminderDate.setHours(reminderDate.getHours() + 24);
 
@@ -141,12 +134,10 @@ const LeadDetail = () => {
         note: "⏰ Send proposal within 24 hours for better conversion rate!",
       });
 
-      // Refetch to update UI
       const response = await leadService.getLead(id);
       setLead(response.data);
-      console.log("✅ Auto reminder set successfully");
     } catch (err) {
-      console.error("❌ Failed to set auto reminder:", err);
+      console.error("Failed to set auto reminder:", err);
     }
   };
 
@@ -249,17 +240,8 @@ const LeadDetail = () => {
     );
   }
 
-  // ✅ FIX: Only disable if BOTH converted AND not being updated
-  // Allow status change even for won/lost leads (reopen functionality)
   const isStatusChangeDisabled =
     lead.convertedToClient && lead.status === "closed_won";
-
-  console.log("🎛️ Render state:", {
-    status: lead.status,
-    convertedToClient: lead.convertedToClient,
-    statusUpdating,
-    isStatusChangeDisabled,
-  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 lg:space-y-6 px-2 sm:px-0">

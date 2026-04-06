@@ -137,17 +137,7 @@ const LeadStatusFlow = ({
   const isReallyDisabled =
     disabled || (isConverted && currentStatus === "closed_won");
 
-  console.log("🔧 LeadStatusFlow state:", {
-    currentStatus,
-    disabled,
-    isConverted,
-    isReallyDisabled,
-    isFinalStatus,
-    loading,
-  });
-
   const handleReopenLead = () => {
-    console.log("🔄 Reopen clicked, isConverted:", isConverted);
     if (isConverted) {
       message.warning(
         "Cannot reopen a converted lead. The client already exists."
@@ -158,7 +148,6 @@ const LeadStatusFlow = ({
   };
 
   const confirmReopenLead = async () => {
-    console.log("✅ Confirming reopen...");
     setLoading(true);
     try {
       await onStatusChange("new");
@@ -173,15 +162,7 @@ const LeadStatusFlow = ({
   };
 
   const handleStatusClick = (targetStatus) => {
-    console.log(
-      "📍 Status click:",
-      targetStatus,
-      "isReallyDisabled:",
-      isReallyDisabled
-    );
-
     if (isReallyDisabled || loading) {
-      console.log("⚠️ Click ignored - disabled or loading");
       return;
     }
 
@@ -195,7 +176,6 @@ const LeadStatusFlow = ({
   };
 
   const confirmStatusChange = async (targetStatus) => {
-    console.log("✅ Confirming status:", targetStatus);
     setLoading(true);
     try {
       await onStatusChange(targetStatus);
