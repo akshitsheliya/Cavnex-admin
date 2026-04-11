@@ -154,7 +154,6 @@
 // });
 
 // module.exports = app;
-
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -181,65 +180,51 @@ const allowedOrigins = [
   "https://www.cavnex.in",
 ];
 
-app.use((req, res, next) => {
+function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
-
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS"
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-Requested-With, Accept, Origin"
-    );
-    res.setHeader("Access-Control-Max-Age", "86400");
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  } else if (!origin) {
+    res.header("Access-Control-Allow-Origin", "*");
   }
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma"
+  );
+  res.header("Access-Control-Max-Age", "86400");
+  res.header("Access-Control-Expose-Headers", "Content-Range, X-Content-Range");
+}
+
+app.use((req, res, next) => {
+  setCorsHeaders(req, res);
 
   if (req.method === "OPTIONS") {
-    return res.status(204).end();
+    console.log(`✅ OPTIONS preflight: ${req.path} from ${req.headers.origin}`);
+    res.status(200).end();
+    return;
   }
 
   next();
 });
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("❌ CORS blocked origin:", origin);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 86400,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-};
-
-app.use(cors(corsOptions));
-
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginResourcePolicy: false,
     crossOriginOpenerPolicy: false,
   })
 );
+
+app.use((req, res, next) => {
+  setCorsHeaders(req, res);
+  next();
+});
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -261,6 +246,19 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/api/cors-test", (req, res) => {
+  res.json({
+    success: true,
+    message: "CORS is working",
+    headers: {
+      origin: req.headers.origin,
+      method: req.method,
+      allowMethods: res.getHeader("Access-Control-Allow-Methods"),
+      allowOrigin: res.getHeader("Access-Control-Allow-Origin"),
+    },
   });
 });
 
