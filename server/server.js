@@ -155,7 +155,6 @@
 
 // module.exports = app;
 const express = require("express");
-const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const dotenv = require("dotenv");
@@ -180,34 +179,39 @@ const allowedOrigins = [
   "https://www.cavnex.in",
 ];
 
-function setCorsHeaders(req, res) {
-  const origin = req.headers.origin;
+function getCorsHeaders(origin) {
+  const headers = {
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods":
+      "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma",
+    "Access-Control-Max-Age": "86400",
+    "Access-Control-Expose-Headers": "Content-Range, X-Content-Range",
+  };
+
   if (origin && allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  } else if (!origin) {
-    res.header("Access-Control-Allow-Origin", "*");
+    headers["Access-Control-Allow-Origin"] = origin;
+  } else {
+    headers["Access-Control-Allow-Origin"] = "*";
   }
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma"
-  );
-  res.header("Access-Control-Max-Age", "86400");
-  res.header("Access-Control-Expose-Headers", "Content-Range, X-Content-Range");
+
+  return headers;
 }
 
 app.use((req, res, next) => {
-  setCorsHeaders(req, res);
+  const origin = req.headers.origin;
+  const corsHeaders = getCorsHeaders(origin);
 
   if (req.method === "OPTIONS") {
-    console.log(`✅ OPTIONS preflight: ${req.path} from ${req.headers.origin}`);
-    res.status(200).end();
+    res.writeHead(200, corsHeaders);
+    res.end();
     return;
   }
+
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
 
   next();
 });
@@ -222,7 +226,11 @@ app.use(
 );
 
 app.use((req, res, next) => {
-  setCorsHeaders(req, res);
+  const origin = req.headers.origin;
+  const corsHeaders = getCorsHeaders(origin);
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
   next();
 });
 
