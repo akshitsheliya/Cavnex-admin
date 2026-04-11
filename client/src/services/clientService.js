@@ -1,3 +1,4 @@
+// clientService.js
 import api from "../services/api";
 
 const clientService = {
@@ -28,7 +29,7 @@ const clientService = {
   },
 
   updateClientStatus: async (id, status) => {
-    const response = await api.patch(`/clients/${id}/status`, { status });
+    const response = await api.post(`/clients/${id}/status`, { status });
     return response.data;
   },
 

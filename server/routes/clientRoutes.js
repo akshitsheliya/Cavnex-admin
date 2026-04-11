@@ -13,7 +13,7 @@ const {
   getClientStats,
 } = require("../controllers/clientController");
 const { protect } = require("../middleware/authMiddleware");
-const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
+const { attachOrganization } = require("../middleware/organizationMiddleware");
 const {
   createClientValidator,
   updateClientValidator,
@@ -21,11 +21,17 @@ const {
   clientIdValidator,
 } = require("../validators/clientValidator");
 
-// ✅ Apply both middlewares
 router.use(protect);
-router.use(attachOrganization); // ✅ NEW LINE
+router.use(attachOrganization);
 
 router.get("/stats", getClientStats);
+
+router.post("/:id/status", clientIdValidator, updateClientStatus);
+router.patch("/:id/status", clientIdValidator, updateClientStatus);
+
+router.get("/:id/projects", clientIdValidator, getClientProjects);
+router.get("/:id/invoices", clientIdValidator, getClientInvoices);
+router.get("/:id/proposals", clientIdValidator, getClientProposals);
 
 router
   .route("/")
@@ -37,11 +43,5 @@ router
   .get(clientIdValidator, getClient)
   .put(updateClientValidator, updateClient)
   .delete(clientIdValidator, deleteClient);
-
-router.patch("/:id/status", clientIdValidator, updateClientStatus);
-
-router.get("/:id/projects", clientIdValidator, getClientProjects);
-router.get("/:id/invoices", clientIdValidator, getClientInvoices);
-router.get("/:id/proposals", clientIdValidator, getClientProposals);
 
 module.exports = router;

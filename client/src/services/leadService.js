@@ -1,10 +1,10 @@
+// leadService.js
 import api from "../services/api";
 
 const leadService = {
   getLeads: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const response = await api.get(`/leads?${queryString}`);
-
     return response.data;
   },
 
@@ -29,7 +29,7 @@ const leadService = {
   },
 
   updateLeadStatus: async (id, status) => {
-    const response = await api.patch(`/leads/${id}/status`, { status });
+    const response = await api.post(`/leads/${id}/status`, { status });
     return response.data;
   },
 
@@ -42,6 +42,7 @@ const leadService = {
     const response = await api.get("/leads/stats");
     return response.data;
   },
+
   getReminders: async () => {
     const response = await api.get("/leads/reminders");
     return response.data;
@@ -64,14 +65,14 @@ const leadService = {
   },
 
   updateReminderStatus: async (leadId, status) => {
-    const response = await api.patch(`/leads/${leadId}/reminder/status`, {
+    const response = await api.post(`/leads/${leadId}/reminder/status`, {
       status,
     });
     return response.data;
   },
 
   deleteReminder: async (leadId) => {
-    const response = await api.delete(`/leads/${leadId}/reminder`);
+    const response = await api.post(`/leads/${leadId}/reminder/delete`);
     return response.data;
   },
 };

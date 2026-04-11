@@ -33,6 +33,17 @@ router.get("/reminders/stats", getReminderStats);
 router.get("/reminders/all", getAllReminders);
 router.get("/reminders", getReminders);
 
+router.post("/:id/status", leadIdValidator, updateLeadStatus);
+router.patch("/:id/status", leadIdValidator, updateLeadStatus);
+
+router.post("/:id/convert", leadIdValidator, convertToClient);
+
+router.post("/:id/reminder/status", leadIdValidator, updateReminderStatus);
+router.patch("/:id/reminder/status", leadIdValidator, updateReminderStatus);
+router.post("/:id/reminder/delete", leadIdValidator, deleteReminder);
+router.delete("/:id/reminder", leadIdValidator, deleteReminder);
+router.post("/:id/reminder", leadIdValidator, setReminder);
+
 router
   .route("/")
   .get(getLeadsValidator, getLeads)
@@ -43,13 +54,5 @@ router
   .get(leadIdValidator, getLead)
   .put(updateLeadValidator, updateLead)
   .delete(leadIdValidator, deleteLead);
-
-router.patch("/:id/status", leadIdValidator, updateLeadStatus);
-
-router.post("/:id/convert", leadIdValidator, convertToClient);
-
-router.post("/:id/reminder", leadIdValidator, setReminder);
-router.patch("/:id/reminder/status", leadIdValidator, updateReminderStatus);
-router.delete("/:id/reminder", leadIdValidator, deleteReminder);
 
 module.exports = router;
