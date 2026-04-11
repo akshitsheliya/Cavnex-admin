@@ -13,7 +13,7 @@ const {
   sendInvoice,
 } = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
-const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
+const { attachOrganization } = require("../middleware/organizationMiddleware");
 const {
   createInvoiceValidator,
   updateInvoiceValidator,
@@ -22,14 +22,17 @@ const {
   recordPaymentValidator,
 } = require("../validators/invoiceValidator");
 
-// ✅ Apply both middlewares
 router.use(protect);
-router.use(attachOrganization); // ✅ NEW LINE
+router.use(attachOrganization);
 
-// Stats route
 router.get("/stats", getInvoiceStats);
 
-// Main CRUD routes
+router.post("/:id/status", invoiceIdValidator, updateInvoiceStatus);
+router.patch("/:id/status", invoiceIdValidator, updateInvoiceStatus);
+router.post("/:id/payment", recordPaymentValidator, recordPayment);
+router.post("/:id/duplicate", invoiceIdValidator, duplicateInvoice);
+router.post("/:id/send", invoiceIdValidator, sendInvoice);
+
 router
   .route("/")
   .get(getInvoicesValidator, getInvoices)
@@ -40,11 +43,5 @@ router
   .get(invoiceIdValidator, getInvoice)
   .put(updateInvoiceValidator, updateInvoice)
   .delete(invoiceIdValidator, deleteInvoice);
-
-// Additional actions
-router.patch("/:id/status", invoiceIdValidator, updateInvoiceStatus);
-router.post("/:id/payment", recordPaymentValidator, recordPayment);
-router.post("/:id/duplicate", invoiceIdValidator, duplicateInvoice);
-router.post("/:id/send", invoiceIdValidator, sendInvoice);
 
 module.exports = router;

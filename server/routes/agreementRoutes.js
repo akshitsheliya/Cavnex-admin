@@ -11,7 +11,7 @@ const {
   getAgreementStats,
 } = require("../controllers/agreementController");
 const { protect } = require("../middleware/authMiddleware");
-const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
+const { attachOrganization } = require("../middleware/organizationMiddleware");
 const {
   createAgreementValidator,
   updateAgreementValidator,
@@ -19,14 +19,15 @@ const {
   agreementIdValidator,
 } = require("../validators/agreementValidator");
 
-// ✅ Apply both middlewares
 router.use(protect);
-router.use(attachOrganization); // ✅ NEW LINE
+router.use(attachOrganization);
 
-// Stats route
 router.get("/stats", getAgreementStats);
 
-// Main CRUD routes
+router.post("/:id/status", agreementIdValidator, updateAgreementStatus);
+router.patch("/:id/status", agreementIdValidator, updateAgreementStatus);
+router.post("/:id/duplicate", agreementIdValidator, duplicateAgreement);
+
 router
   .route("/")
   .get(getAgreementsValidator, getAgreements)
@@ -37,9 +38,5 @@ router
   .get(agreementIdValidator, getAgreement)
   .put(updateAgreementValidator, updateAgreement)
   .delete(agreementIdValidator, deleteAgreement);
-
-// Additional actions
-router.patch("/:id/status", agreementIdValidator, updateAgreementStatus);
-router.post("/:id/duplicate", agreementIdValidator, duplicateAgreement);
 
 module.exports = router;

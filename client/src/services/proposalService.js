@@ -28,7 +28,7 @@ const proposalService = {
   },
 
   updateStatus: async (id, status, rejectionReason = null) => {
-    const response = await api.patch(`/proposals/${id}/status`, {
+    const response = await api.post(`/proposals/${id}/status`, {
       status,
       rejectionReason,
     });

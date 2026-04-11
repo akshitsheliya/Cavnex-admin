@@ -28,7 +28,7 @@ const invoiceService = {
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/invoices/${id}/status`, { status });
+    const response = await api.post(`/invoices/${id}/status`, { status });
     return response.data;
   },
 

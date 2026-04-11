@@ -28,7 +28,7 @@ const agreementService = {
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/agreements/${id}/status`, { status });
+    const response = await api.post(`/agreements/${id}/status`, { status });
     return response.data;
   },
 

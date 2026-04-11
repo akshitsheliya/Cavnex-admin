@@ -15,7 +15,7 @@ const {
   getProjectStats,
 } = require("../controllers/projectController");
 const { protect } = require("../middleware/authMiddleware");
-const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
+const { attachOrganization } = require("../middleware/organizationMiddleware");
 const {
   createProjectValidator,
   updateProjectValidator,
@@ -23,11 +23,21 @@ const {
   projectIdValidator,
 } = require("../validators/projectValidator");
 
-// ✅ Apply both middlewares
 router.use(protect);
-router.use(attachOrganization); // ✅ NEW LINE
+router.use(attachOrganization);
 
 router.get("/stats", getProjectStats);
+
+router.post("/:id/status", projectIdValidator, updateProjectStatus);
+router.patch("/:id/status", projectIdValidator, updateProjectStatus);
+router.post("/:id/progress", projectIdValidator, updateProjectProgress);
+router.patch("/:id/progress", projectIdValidator, updateProjectProgress);
+
+router.post("/:id/features", projectIdValidator, addFeature);
+router.put("/:id/features/:featureId", projectIdValidator, updateFeature);
+router.delete("/:id/features/:featureId", projectIdValidator, deleteFeature);
+
+router.post("/:id/milestones", projectIdValidator, addMilestone);
 
 router
   .route("/")
@@ -39,14 +49,5 @@ router
   .get(projectIdValidator, getProject)
   .put(updateProjectValidator, updateProject)
   .delete(projectIdValidator, deleteProject);
-
-router.patch("/:id/status", projectIdValidator, updateProjectStatus);
-router.patch("/:id/progress", projectIdValidator, updateProjectProgress);
-
-router.post("/:id/features", projectIdValidator, addFeature);
-router.put("/:id/features/:featureId", projectIdValidator, updateFeature);
-router.delete("/:id/features/:featureId", projectIdValidator, deleteFeature);
-
-router.post("/:id/milestones", projectIdValidator, addMilestone);
 
 module.exports = router;

@@ -28,12 +28,12 @@ const projectService = {
   },
 
   updateProjectStatus: async (id, status) => {
-    const response = await api.patch(`/projects/${id}/status`, { status });
+    const response = await api.post(`/projects/${id}/status`, { status });
     return response.data;
   },
 
   updateProjectProgress: async (id, progress) => {
-    const response = await api.patch(`/projects/${id}/progress`, { progress });
+    const response = await api.post(`/projects/${id}/progress`, { progress });
     return response.data;
   },
 

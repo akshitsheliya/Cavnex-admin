@@ -12,7 +12,7 @@ const {
   createFromCalculator,
 } = require("../controllers/proposalController");
 const { protect } = require("../middleware/authMiddleware");
-const { attachOrganization } = require("../middleware/organizationMiddleware"); // ✅ NEW IMPORT
+const { attachOrganization } = require("../middleware/organizationMiddleware");
 const {
   createProposalValidator,
   updateProposalValidator,
@@ -20,14 +20,17 @@ const {
   proposalIdValidator,
 } = require("../validators/proposalValidator");
 
-// ✅ Apply both middlewares
 router.use(protect);
-router.use(attachOrganization); // ✅ NEW LINE
+router.use(attachOrganization);
 
-// Stats route
 router.get("/stats", getProposalStats);
 
-// Main CRUD routes
+router.post("/from-calculator", createFromCalculator);
+
+router.post("/:id/status", proposalIdValidator, updateProposalStatus);
+router.patch("/:id/status", proposalIdValidator, updateProposalStatus);
+router.post("/:id/duplicate", proposalIdValidator, duplicateProposal);
+
 router
   .route("/")
   .get(getProposalsValidator, getProposals)
@@ -38,12 +41,5 @@ router
   .get(proposalIdValidator, getProposal)
   .put(updateProposalValidator, updateProposal)
   .delete(proposalIdValidator, deleteProposal);
-
-// Additional actions
-router.patch("/:id/status", proposalIdValidator, updateProposalStatus);
-router.post("/:id/duplicate", proposalIdValidator, duplicateProposal);
-
-// Calculator route
-router.post("/from-calculator", createFromCalculator);
 
 module.exports = router;
