@@ -18,7 +18,7 @@ const ActiveProjects = ({ projects, totalProjects }) => {
       actions={
         <button
           onClick={() => navigate("/projects")}
-          className="text-sm text-neon-green hover:text-neon-blue transition-colors"
+          className="text-sm text-neon-green hover:text-neon-blue transition-colors whitespace-nowrap"
         >
           View All ({totalProjects})
         </button>
@@ -55,19 +55,21 @@ const ActiveProjects = ({ projects, totalProjects }) => {
               onClick={() => navigate(`/projects/${project._id}`)}
               className="p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors break-words">
                     {project.projectName || project.name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate">
                     {project.client?.clientName ||
                       project.client?.name ||
                       project.client?.company ||
                       "No client"}
                   </p>
                 </div>
-                <StatusBadge status={project.status} />
+                <div className="flex-shrink-0">
+                  <StatusBadge status={project.status} />
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
@@ -76,7 +78,7 @@ const ActiveProjects = ({ projects, totalProjects }) => {
                     style={{ width: `${project.progress || 0}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm font-medium text-white whitespace-nowrap">
                   {project.progress || 0}%
                 </span>
               </div>

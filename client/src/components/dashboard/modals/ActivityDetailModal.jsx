@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Modal from "../../common/Modal";
+import { Modal } from "antd";
 import {
   formatCurrencyFull,
   getStatusBadgeStyle,
@@ -25,12 +25,19 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Activity Details">
+    <Modal
+      open={isOpen}
+      onCancel={onClose}
+      title="Activity Details"
+      footer={null}
+      centered
+      width={600}
+    >
       <div className="space-y-4">
         <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-3">
             <div
-              className={`p-2 rounded-lg bg-gradient-to-br ${activity.color}`}
+              className={`p-2 rounded-lg bg-gradient-to-br ${activity.color} flex-shrink-0`}
             >
               <svg
                 className="w-5 h-5 text-white"
@@ -46,32 +53,36 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
                 />
               </svg>
             </div>
-            <div>
-              <h3 className="text-white font-semibold">{activity.title}</h3>
-              <p className="text-gray-400 text-sm">{activity.description}</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-semibold break-words">
+                {activity.title}
+              </h3>
+              <p className="text-gray-400 text-sm break-words">
+                {activity.description}
+              </p>
             </div>
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-gray-400">Time:</span>
               <span className="text-white">{activity.time}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-gray-400">Type:</span>
               <span className="text-white capitalize">{activity.type}</span>
             </div>
             {activity.statusChange && (
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <span className="text-gray-400">Status Change:</span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span
-                    className={`px-2 py-0.5 rounded text-xs ${getStatusBadgeStyle(activity.statusChange.from)}`}
+                    className={`px-2 py-0.5 rounded text-xs whitespace-nowrap ${getStatusBadgeStyle(activity.statusChange.from)}`}
                   >
                     {activity.statusChange.from}
                   </span>
                   <svg
-                    className="w-4 h-4 text-gray-500"
+                    className="w-4 h-4 text-gray-500 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -84,7 +95,7 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
                     />
                   </svg>
                   <span
-                    className={`px-2 py-0.5 rounded text-xs ${getStatusBadgeStyle(activity.statusChange.to)}`}
+                    className={`px-2 py-0.5 rounded text-xs whitespace-nowrap ${getStatusBadgeStyle(activity.statusChange.to)}`}
                   >
                     {activity.statusChange.to}
                   </span>
@@ -97,25 +108,25 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
         {activity.type === "lead" && activity.data && (
           <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
             <h4 className="text-white font-medium mb-2">Lead Details</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="break-words">
                 <span className="text-gray-400">Name:</span>
                 <span className="text-white ml-2">
                   {activity.data.leadName || activity.data.name}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-400">Email:</span>
                 <span className="text-white ml-2">{activity.data.email}</span>
               </div>
               {activity.data.phone && (
-                <div>
+                <div className="break-words">
                   <span className="text-gray-400">Phone:</span>
                   <span className="text-white ml-2">{activity.data.phone}</span>
                 </div>
               )}
               {activity.data.source && (
-                <div>
+                <div className="break-words">
                   <span className="text-gray-400">Source:</span>
                   <span className="text-white ml-2 capitalize">
                     {activity.data.source}
@@ -130,14 +141,14 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
           <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
             <h4 className="text-white font-medium mb-2">Project Details</h4>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span className="text-gray-400">Progress:</span>
                 <span className="text-white">
                   {activity.data.progress || 0}%
                 </span>
               </div>
               {activity.data.budget && (
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                   <span className="text-gray-400">Budget:</span>
                   <span className="text-neon-green">
                     {formatCurrencyFull(activity.data.budget)}
@@ -151,7 +162,7 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
         {activity.type === "invoice" && activity.data && (
           <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
             <h4 className="text-white font-medium mb-2">Invoice Details</h4>
-            <div className="flex justify-between text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
               <span className="text-gray-400">Amount:</span>
               <span className="text-neon-green font-semibold">
                 {formatCurrencyFull(activity.data.total)}
@@ -160,16 +171,16 @@ const ActivityDetailModal = ({ isOpen, onClose, activity }) => {
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-colors"
           >
             Close
           </button>
           <button
             onClick={handleViewDetail}
-            className="flex-1 px-4 py-2 bg-neon-green text-black font-semibold rounded-xl hover:bg-neon-green/90 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-neon-green text-black font-semibold rounded-xl hover:bg-neon-green/90 transition-colors"
           >
             View Full Details
           </button>

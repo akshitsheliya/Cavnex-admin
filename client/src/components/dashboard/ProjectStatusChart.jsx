@@ -12,7 +12,7 @@ const ProjectStatusChart = ({
 }) => {
   return (
     <Card title="Project Status" subtitle="Current distribution">
-      <div className="relative w-48 h-48 mx-auto mb-6">
+      <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto mb-6">
         <svg
           className="w-full h-full transform -rotate-90"
           viewBox="0 0 100 100"
@@ -74,37 +74,45 @@ const ProjectStatusChart = ({
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-3xl font-bold text-white">{totalProjects}</p>
-            <p className="text-sm text-gray-400">Projects</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white">
+              {totalProjects}
+            </p>
+            <p className="text-xs sm:text-sm text-gray-400">Projects</p>
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-neon-green to-neon-blue" />
-            <span className="text-sm text-gray-300">In Progress</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-neon-green to-neon-blue flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-300 truncate">
+              In Progress
+            </span>
           </div>
-          <span className="text-sm font-medium text-white">
+          <span className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
             {activeProjects} ({inProgressPct}%)
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
-            <span className="text-sm text-gray-300">Completed</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-300 truncate">
+              Completed
+            </span>
           </div>
-          <span className="text-sm font-medium text-white">
+          <span className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
             {completedProjects} ({completedPct}%)
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-red-500" />
-            <span className="text-sm text-gray-300">Pending/On Hold</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-red-500 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-300 truncate">
+              Pending/On Hold
+            </span>
           </div>
-          <span className="text-sm font-medium text-white">
+          <span className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
             {pendingProjects} ({pendingPct}%)
           </span>
         </div>

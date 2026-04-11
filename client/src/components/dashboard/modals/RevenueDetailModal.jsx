@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Modal from "../../common/Modal";
+import { Modal } from "antd";
 import {
   formatCurrency,
   formatCurrencyFull,
@@ -19,27 +19,30 @@ const RevenueDetailModal = ({
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={onClose}
+      open={isOpen}
+      onCancel={onClose}
       title="Revenue from Completed Projects"
+      footer={null}
+      centered
+      width={800}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
             <p className="text-xs text-gray-400 uppercase">Total Budget</p>
-            <p className="text-xl font-bold text-green-400 mt-1">
+            <p className="text-lg sm:text-xl font-bold text-green-400 mt-1 break-words">
               {formatCurrencyFull(totalRevenue)}
             </p>
           </div>
           <div className="p-4 rounded-xl bg-neon-green/10 border border-neon-green/30 text-center">
             <p className="text-xs text-gray-400 uppercase">Received</p>
-            <p className="text-xl font-bold text-neon-green mt-1">
+            <p className="text-lg sm:text-xl font-bold text-neon-green mt-1 break-words">
               {formatCurrencyFull(paidRevenue)}
             </p>
           </div>
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
             <p className="text-xs text-gray-400 uppercase">Pending</p>
-            <p className="text-xl font-bold text-amber-400 mt-1">
+            <p className="text-lg sm:text-xl font-bold text-amber-400 mt-1 break-words">
               {formatCurrencyFull(pendingRevenue)}
             </p>
           </div>
@@ -57,7 +60,7 @@ const RevenueDetailModal = ({
         {projects.filter((p) => p.status === "completed").length > 0 ? (
           <div className="space-y-3">
             <h4 className="text-white font-medium">All Completed Projects</h4>
-            <div className="max-h-60 overflow-y-auto space-y-2">
+            <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
               {projects
                 .filter((p) => p.status === "completed")
                 .sort(
@@ -74,19 +77,19 @@ const RevenueDetailModal = ({
                     }}
                     className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-neon-green/30 transition-colors cursor-pointer"
                   >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-white font-medium text-sm">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium text-sm break-words">
                           {project.projectName || project.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 truncate">
                           {project.client?.businessName ||
                             project.client?.clientName ||
                             "No client"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-neon-green font-semibold text-sm">
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <p className="text-neon-green font-semibold text-sm break-words">
                           {formatCurrencyFull(project.budget)}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -97,13 +100,13 @@ const RevenueDetailModal = ({
                     <div className="mt-2">
                       <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-neon-green to-neon-blue rounded-full"
+                          className="h-full bg-gradient-to-r from-neon-green to-neon-blue rounded-full transition-all"
                           style={{
                             width: `${Math.min(((project.amountPaid || 0) / (project.budget || 1)) * 100, 100)}%`,
                           }}
                         />
                       </div>
-                      <div className="flex justify-between mt-1 text-xs text-gray-500">
+                      <div className="flex flex-col sm:flex-row justify-between mt-1 text-xs text-gray-500 gap-1">
                         <span>
                           {Math.round(
                             ((project.amountPaid || 0) /
@@ -151,7 +154,7 @@ const RevenueDetailModal = ({
             onClose();
             navigate("/projects?status=completed");
           }}
-          className="w-full px-4 py-2 bg-neon-green/10 text-neon-green rounded-xl hover:bg-neon-green/20 transition-colors"
+          className="w-full px-4 py-2.5 bg-neon-green/10 text-neon-green rounded-xl hover:bg-neon-green/20 transition-colors"
         >
           View All Completed Projects
         </button>

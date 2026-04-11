@@ -1,3 +1,4 @@
+// LeadStatusBadge.jsx
 import React from "react";
 
 const statusConfig = {
@@ -94,7 +95,7 @@ const LeadStatusBadge = ({ status, size = "md", showIcon = false }) => {
         ${config.bg} ${config.text} ${config.border} ${sizeClass.pill}
       `}
     >
-      {showIcon && <span>{config.icon}</span>}
+      {showIcon && <span className="text-xs leading-none">{config.icon}</span>}
       <span
         className={`rounded-full flex-shrink-0 ${config.dot} ${sizeClass.dot}`}
       />

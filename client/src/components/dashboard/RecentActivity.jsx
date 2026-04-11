@@ -10,7 +10,7 @@ const RecentActivity = ({ activities, onActivityClick, onViewAll }) => {
         onViewAll && (
           <button
             onClick={onViewAll}
-            className="text-sm text-neon-green hover:text-neon-blue transition-colors"
+            className="text-sm text-neon-green hover:text-neon-blue transition-colors whitespace-nowrap"
           >
             View All
           </button>
@@ -40,13 +40,13 @@ const RecentActivity = ({ activities, onActivityClick, onViewAll }) => {
             <div
               key={activity.id || index}
               onClick={() => onActivityClick(activity)}
-              className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
+              className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
             >
               <div
-                className={`p-2.5 rounded-xl bg-gradient-to-br ${activity.color} shadow-lg flex-shrink-0`}
+                className={`p-2 sm:p-2.5 rounded-xl bg-gradient-to-br ${activity.color} shadow-lg flex-shrink-0`}
               >
                 <svg
-                  className="w-5 h-5 text-white"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -61,24 +61,24 @@ const RecentActivity = ({ activities, onActivityClick, onViewAll }) => {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors break-words">
                     {activity.title}
                   </p>
-                  <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/10 text-gray-400 uppercase">
+                  <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/10 text-gray-400 uppercase whitespace-nowrap">
                     {activity.type}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">
+                <p className="text-xs text-gray-500 mt-0.5 break-words">
                   {activity.description}
                 </p>
                 {activity.statusChange && (
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="text-[10px] text-gray-500 uppercase">
                       {activity.statusChange.from}
                     </span>
                     <svg
-                      className="w-3 h-3 text-gray-500"
+                      className="w-3 h-3 text-gray-500 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -108,8 +108,8 @@ const RecentActivity = ({ activities, onActivityClick, onViewAll }) => {
                 )}
               </div>
 
-              <div className="flex-shrink-0 flex flex-col items-end gap-1 ml-2">
-                <span className="text-xs text-gray-500 flex-shrink-0">
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="text-xs text-gray-500 whitespace-nowrap">
                   {activity.time}
                 </span>
                 <svg

@@ -12,14 +12,14 @@ const StatCard = ({
   return (
     <div
       onClick={onClick}
-      className="glass-card p-6 cursor-pointer hover:border-neon-green/30 transition-all duration-300 group"
+      className="glass-card p-4 sm:p-6 cursor-pointer hover:border-neon-green/30 transition-all duration-300 group"
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div
-          className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}
+          className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}
         >
           <svg
-            className="w-6 h-6 text-white"
+            className="w-5 h-5 sm:w-6 sm:h-6 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -33,19 +33,20 @@ const StatCard = ({
           </svg>
         </div>
         <div
-          className={`px-2 py-1 rounded-lg text-xs font-medium ${changeType === "positive"
+          className={`px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap ${
+            changeType === "positive"
               ? "bg-neon-green/10 text-neon-green"
               : changeType === "negative"
                 ? "bg-red-500/10 text-red-400"
                 : "bg-gray-500/10 text-gray-400"
-            }`}
+          }`}
         >
           {change}
         </div>
       </div>
       <div className="mt-4">
         <p className="text-sm text-gray-400">{label}</p>
-        <p className="text-2xl font-bold text-white mt-1 group-hover:text-neon-green transition-colors">
+        <p className="text-xl sm:text-2xl font-bold text-white mt-1 group-hover:text-neon-green transition-colors break-words">
           {value}
         </p>
       </div>

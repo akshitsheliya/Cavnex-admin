@@ -18,7 +18,7 @@ const RecentLeads = ({ leads, totalLeads }) => {
       actions={
         <button
           onClick={() => navigate("/leads")}
-          className="text-sm text-neon-green hover:text-neon-blue transition-colors"
+          className="text-sm text-neon-green hover:text-neon-blue transition-colors whitespace-nowrap"
         >
           View All ({totalLeads})
         </button>
@@ -53,24 +53,24 @@ const RecentLeads = ({ leads, totalLeads }) => {
             <div
               key={lead._id || index}
               onClick={() => navigate(`/leads/${lead._id}`)}
-              className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-neon-green/30 transition-all duration-200 cursor-pointer group gap-3"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20 flex-shrink-0">
                   <span className="text-sm font-medium text-purple-400">
                     {(lead.leadName || lead.name || lead.company || "L")
                       .charAt(0)
                       .toUpperCase()}
                   </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white group-hover:text-neon-green transition-colors break-words">
                     {lead.leadName || lead.name || lead.company}
                   </p>
-                  <p className="text-xs text-gray-500">{lead.email}</p>
+                  <p className="text-xs text-gray-500 truncate">{lead.email}</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto">
                 <StatusBadge status={lead.status} />
                 <p className="text-xs text-gray-500 mt-1">
                   {formatTimeAgo(lead.createdAt)}

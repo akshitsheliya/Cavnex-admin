@@ -1,3 +1,4 @@
+// LeadDetail.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Modal, message } from "antd";
@@ -16,12 +17,10 @@ const { confirm } = Modal;
 
 const InfoField = ({ label, children }) => (
   <div className="min-w-0">
-    <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1 truncate">
+    <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">
       {label}
     </p>
-    <div className="text-white text-xs sm:text-sm lg:text-base break-words">
-      {children}
-    </div>
+    <div className="text-white text-xs sm:text-sm break-words">{children}</div>
   </div>
 );
 
@@ -101,22 +100,15 @@ const LeadDetail = () => {
     try {
       setStatusUpdating(true);
       setError("");
-
       await leadService.updateLeadStatus(id, newStatus);
-
       eventBus.emit(EVENTS.LEAD_STATUS_CHANGED, {
         leadId: id,
         status: newStatus,
       });
-
-      // Refetch the lead to get complete updated data
       const response = await leadService.getLead(id);
-
       setLead(response.data);
-
       return true;
     } catch (err) {
-      console.error("❌ Status change failed:", err);
       setError(err.response?.data?.message || "Failed to update status");
       throw err;
     } finally {
@@ -128,12 +120,10 @@ const LeadDetail = () => {
     try {
       const reminderDate = new Date();
       reminderDate.setHours(reminderDate.getHours() + 24);
-
       await leadService.setReminder(id, {
         date: reminderDate.toISOString().split("T")[0],
         note: "⏰ Send proposal within 24 hours for better conversion rate!",
       });
-
       const response = await leadService.getLead(id);
       setLead(response.data);
     } catch (err) {
@@ -146,15 +136,11 @@ const LeadDetail = () => {
       setReminderLoading(true);
       await leadService.updateReminderStatus(id, status);
       await fetchLead();
-
-      // ✅ Emit event for notification refresh
       eventBus.emit(EVENTS.REMINDER_UPDATED, { leadId: id, status });
-
       message.success(
         `Reminder ${status === "completed" ? "completed" : "dismissed"}`
       );
     } catch (err) {
-      console.error("Failed to update reminder:", err);
       message.error("Failed to update reminder");
     } finally {
       setReminderLoading(false);
@@ -164,18 +150,13 @@ const LeadDetail = () => {
   const handleReminderDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this reminder?"))
       return;
-
     try {
       setReminderLoading(true);
       await leadService.deleteReminder(id);
       await fetchLead();
-
-      // ✅ Emit event for notification refresh
       eventBus.emit(EVENTS.REMINDER_DELETED, { leadId: id });
-
       message.success("Reminder deleted successfully");
     } catch (err) {
-      console.error("Failed to delete reminder:", err);
       message.error("Failed to delete reminder");
     } finally {
       setReminderLoading(false);
@@ -187,13 +168,9 @@ const LeadDetail = () => {
       setReminderLoading(true);
       await leadService.setReminder(id, reminderData);
       await fetchLead();
-
-      // ✅ Emit event for notification refresh
       eventBus.emit(EVENTS.REMINDER_CREATED, { leadId: id });
-
       message.success("Reminder updated successfully");
     } catch (err) {
-      console.error("Failed to update reminder:", err);
       message.error("Failed to update reminder");
     } finally {
       setReminderLoading(false);
@@ -219,9 +196,7 @@ const LeadDetail = () => {
   if (error && !lead) {
     return (
       <div className="text-center py-8 sm:py-12 px-4">
-        <p className="text-red-400 mb-4 text-xs sm:text-sm lg:text-base">
-          {error}
-        </p>
+        <p className="text-red-400 mb-4 text-xs sm:text-sm">{error}</p>
         <Button variant="outline" onClick={() => navigate("/leads")}>
           Back to Leads
         </Button>
@@ -244,7 +219,7 @@ const LeadDetail = () => {
     lead.convertedToClient && lead.status === "closed_won";
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 lg:space-y-6 px-2 sm:px-0">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 px-0 sm:px-0">
       <button
         onClick={() => navigate("/leads")}
         className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-white transition-colors group"
@@ -284,17 +259,16 @@ const LeadDetail = () => {
         </div>
       )}
 
-      {/* Header Card */}
       <div className="glass-card p-3 sm:p-4 lg:p-6">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+              <span className="text-base sm:text-xl font-bold text-white">
                 {lead.leadName?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
+              <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">
                 {lead.leadName}
               </h1>
               <p className="text-gray-400 text-xs sm:text-sm truncate">
@@ -311,15 +285,15 @@ const LeadDetail = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t border-white/10 sm:border-0">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate(`/leads/${id}/edit`)}
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              className="flex-1 sm:flex-none text-xs"
             >
               <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0"
+                className="w-3.5 h-3.5 mr-1 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -339,10 +313,10 @@ const LeadDetail = () => {
                 variant="neon"
                 size="sm"
                 onClick={() => setShowConvertModal(true)}
-                className="flex-1 sm:flex-none text-xs sm:text-sm"
+                className="flex-1 sm:flex-none text-xs"
               >
                 <svg
-                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0"
+                  className="w-3.5 h-3.5 mr-1 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -362,10 +336,10 @@ const LeadDetail = () => {
               variant="danger"
               size="sm"
               onClick={handleDeleteClick}
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              className="flex-1 sm:flex-none text-xs"
             >
               <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0"
+                className="w-3.5 h-3.5 mr-1 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -383,7 +357,6 @@ const LeadDetail = () => {
         </div>
       </div>
 
-      {/* ✅ FIX: Status Progress Card */}
       <Card title="Status Progress">
         <LeadStatusFlow
           currentStatus={lead.status}
@@ -394,11 +367,10 @@ const LeadDetail = () => {
         />
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
-        <div className="lg:col-span-2 space-y-4 sm:space-y-5 lg:space-y-6">
-          {/* Contact Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5">
           <Card title="Contact Information">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               <InfoField label="Email">
                 <a
                   href={`mailto:${lead.email}`}
@@ -407,7 +379,6 @@ const LeadDetail = () => {
                   {lead.email}
                 </a>
               </InfoField>
-
               <InfoField label="Phone">
                 <a
                   href={`tel:${lead.phone}`}
@@ -416,16 +387,15 @@ const LeadDetail = () => {
                   {lead.phone}
                 </a>
               </InfoField>
-
               <InfoField label="City">
                 <span>{lead.city || "Not specified"}</span>
               </InfoField>
-
               <InfoField label="Business Type">
                 <span>{lead.businessType || "Not specified"}</span>
               </InfoField>
             </div>
           </Card>
+
           <Card title="Reminder">
             <ReminderDisplay
               reminder={lead.reminder}
@@ -436,15 +406,14 @@ const LeadDetail = () => {
               loading={reminderLoading}
             />
           </Card>
-          {/* Lead Details */}
+
           <Card title="Lead Details">
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               <InfoField label="Source">
                 <span className="capitalize">
                   {lead.source?.replace("_", " ")}
                 </span>
               </InfoField>
-
               <InfoField label="Estimated Value">
                 <span className="text-neon-green font-semibold">
                   {lead.estimatedValue > 0
@@ -452,11 +421,9 @@ const LeadDetail = () => {
                     : "Not specified"}
                 </span>
               </InfoField>
-
               <InfoField label="Created">
                 <span>{formatDate(lead.createdAt)}</span>
               </InfoField>
-
               <InfoField label="Follow-up Date">
                 <span>
                   {lead.followUpDate
@@ -464,14 +431,13 @@ const LeadDetail = () => {
                     : "Not set"}
                 </span>
               </InfoField>
-
               <InfoField label="Last Updated">
                 <span>{formatDate(lead.updatedAt)}</span>
               </InfoField>
             </div>
 
             {lead.notes && (
-              <div className="mt-4 sm:mt-5 lg:mt-6 pt-4 sm:pt-5 lg:pt-6 border-t border-white/10">
+              <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-white/10">
                 <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-1.5 sm:mb-2">
                   Notes
                 </p>
@@ -483,15 +449,11 @@ const LeadDetail = () => {
           </Card>
         </div>
 
-        <div className="space-y-4 sm:space-y-5 lg:space-y-6">
-          {/* Reminder */}
-
-          {/* Copy Details */}
+        <div className="space-y-4 sm:space-y-5">
           <Card title="Copy Details">
             <CopyLeadButton lead={lead} />
           </Card>
 
-          {/* Quick Actions */}
           <Card title="Quick Actions">
             <div className="space-y-2 sm:space-y-2.5">
               <a href={`mailto:${lead.email}`} className={quickActionBase}>
@@ -572,7 +534,6 @@ const LeadDetail = () => {
         </div>
       </div>
 
-      {/* Convert Modal */}
       <Modal
         open={showConvertModal}
         onCancel={() => setShowConvertModal(false)}
@@ -580,33 +541,35 @@ const LeadDetail = () => {
         footer={null}
         className="custom-modal"
         centered
-        width={400}
+        width="min(400px, 95vw)"
       >
-        <p className="text-gray-300 mb-3 text-sm sm:text-base leading-relaxed">
-          Are you sure you want to convert{" "}
-          <span className="text-white font-medium">{lead.leadName}</span> to a
-          client?
-        </p>
-        <p className="text-gray-400 text-xs sm:text-sm mb-5 sm:mb-6 leading-relaxed">
-          This will create a new client record with the lead's information and
-          mark this lead as "Won".
-        </p>
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => setShowConvertModal(false)}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="neon"
-            onClick={handleConvert}
-            loading={actionLoading}
-            className="w-full sm:w-auto"
-          >
-            Convert to Client
-          </Button>
+        <div className="py-2">
+          <p className="text-gray-300 mb-3 text-sm leading-relaxed">
+            Are you sure you want to convert{" "}
+            <span className="text-white font-medium">{lead.leadName}</span> to a
+            client?
+          </p>
+          <p className="text-gray-400 text-xs mb-4 sm:mb-5 leading-relaxed">
+            This will create a new client record with the lead's information and
+            mark this lead as "Won".
+          </p>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => setShowConvertModal(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="neon"
+              onClick={handleConvert}
+              loading={actionLoading}
+              className="w-full sm:w-auto"
+            >
+              Convert to Client
+            </Button>
+          </div>
         </div>
       </Modal>
 

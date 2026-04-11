@@ -1,5 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import Modal from "../common/Modal";
+import React, { useState, useRef } from "react";
+import { Modal, Select } from "antd";
+import {
+  formatCurrency,
+  formatCurrencyFull,
+} from "../../../utils/dashboardHelpers";
 
 const ChartCardGraph = ({
   title,
@@ -12,7 +16,6 @@ const ChartCardGraph = ({
   const [showModal, setShowModal] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const svgRef = useRef(null);
 
   const months = [
@@ -31,7 +34,6 @@ const ChartCardGraph = ({
   ];
   const currentYear = new Date().getFullYear();
 
-  // Process data based on period
   const getChartData = () => {
     if (
       period === "all" &&
@@ -74,63 +76,29 @@ const ChartCardGraph = ({
     1
   );
 
-  const formatCurrency = (amount) => {
-    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`;
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
-    if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
-    return `₹${amount}`;
-  };
-
-  const formatCurrencyFull = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
-  // SVG dimensions
   const width = 100;
   const height = 50;
   const padding = { top: 5, right: 5, bottom: 8, left: 5 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  // Generate path
   const getPath = () => {
     if (chartData.length === 0) return "";
-
     const points = chartData.map((d, i) => {
       const x = padding.left + (i / (chartData.length - 1 || 1)) * chartWidth;
       const value = d.total || d.value || 0;
       const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
       return { x, y };
     });
-
-    const linePath = points
+    return points
       .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
       .join(" ");
-
-    return linePath;
   };
 
   const getAreaPath = () => {
     if (chartData.length === 0) return "";
-
-    const points = chartData.map((d, i) => {
-      const x = padding.left + (i / (chartData.length - 1 || 1)) * chartWidth;
-      const value = d.total || d.value || 0;
-      const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
-      return { x, y };
-    });
-
-    const linePath = points
-      .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-      .join(" ");
-
-    const areaPath = `${linePath} L ${padding.left + chartWidth} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`;
-
-    return areaPath;
+    const linePath = getPath();
+    return `${linePath} L ${padding.left + chartWidth} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`;
   };
 
   const getPointPosition = (index) => {
@@ -160,7 +128,6 @@ const ChartCardGraph = ({
     return months[index]?.substring(0, 1);
   };
 
-  // Calculate totals
   const totalRevenue = chartData.reduce(
     (sum, d) => sum + (d.total || d.value || 0),
     0
@@ -173,46 +140,46 @@ const ChartCardGraph = ({
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+        <div className="flex-1">
           {title && (
             <h3 className="text-lg font-semibold text-white">{title}</h3>
           )}
           {subtitle && <p className="text-sm text-gray-400">{subtitle}</p>}
         </div>
-        <select
+        <Select
           value={period}
-          onChange={(e) => onPeriodChange && onPeriodChange(e.target.value)}
-          className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-neon-green/50 cursor-pointer"
-        >
-          <option value="6months">Last 6 Months</option>
-          <option value="year">This Year ({currentYear})</option>
-          <option value="all">All Time</option>
-        </select>
+          onChange={(value) => onPeriodChange && onPeriodChange(value)}
+          className="w-full sm:w-auto min-w-[160px]"
+          options={[
+            { value: "6months", label: "Last 6 Months" },
+            { value: "year", label: `This Year (${currentYear})` },
+            { value: "all", label: "All Time" },
+          ]}
+        />
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
           <p className="text-xs text-gray-400">Total Revenue</p>
-          <p className="text-lg font-bold text-neon-green">
+          <p className="text-base sm:text-lg font-bold text-neon-green break-words">
             {formatCurrency(totalRevenue)}
           </p>
         </div>
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
           <p className="text-xs text-gray-400">Received</p>
-          <p className="text-lg font-bold text-green-400">
+          <p className="text-base sm:text-lg font-bold text-green-400 break-words">
             {formatCurrency(totalPaid)}
           </p>
         </div>
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
           <p className="text-xs text-gray-400">Projects</p>
-          <p className="text-lg font-bold text-white">{totalProjects}</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            {totalProjects}
+          </p>
         </div>
       </div>
 
-      {/* Line Graph */}
       {chartData.length === 0 ? (
         <div className="h-64 flex items-center justify-center">
           <div className="text-center">
@@ -273,7 +240,6 @@ const ChartCardGraph = ({
               </filter>
             </defs>
 
-            {/* Grid Lines */}
             {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => (
               <line
                 key={i}
@@ -286,10 +252,8 @@ const ChartCardGraph = ({
               />
             ))}
 
-            {/* Area under line */}
             <path d={getAreaPath()} fill="url(#areaGradient)" />
 
-            {/* Main line */}
             <path
               d={getPath()}
               fill="none"
@@ -300,7 +264,6 @@ const ChartCardGraph = ({
               filter="url(#glow)"
             />
 
-            {/* Data points */}
             {chartData.map((item, i) => {
               const { x, y } = getPointPosition(i);
               const value = item.total || item.value || 0;
@@ -308,7 +271,6 @@ const ChartCardGraph = ({
 
               return (
                 <g key={i}>
-                  {/* Invisible larger hit area */}
                   <circle
                     cx={x}
                     cy={y}
@@ -319,7 +281,6 @@ const ChartCardGraph = ({
                     onMouseEnter={() => setHoveredIndex(i)}
                     onMouseLeave={() => setHoveredIndex(null)}
                   />
-                  {/* Visible point */}
                   <circle
                     cx={x}
                     cy={y}
@@ -332,7 +293,6 @@ const ChartCardGraph = ({
                     className="transition-all duration-200 cursor-pointer"
                     onClick={() => handlePointClick(item, i)}
                   />
-                  {/* Glow on hover */}
                   {hoveredIndex === i && hasData && (
                     <circle
                       cx={x}
@@ -350,7 +310,6 @@ const ChartCardGraph = ({
             })}
           </svg>
 
-          {/* X-axis labels */}
           <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
             {chartData.map((item, i) => (
               <span
@@ -365,7 +324,6 @@ const ChartCardGraph = ({
             ))}
           </div>
 
-          {/* Hover Tooltip */}
           {hoveredIndex !== null && chartData[hoveredIndex] && (
             <div
               className="absolute bg-dark-600 border border-white/10 rounded-lg px-3 py-2 text-xs pointer-events-none z-10 transform -translate-x-1/2"
@@ -395,28 +353,28 @@ const ChartCardGraph = ({
         </div>
       )}
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-white/5">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-4 pt-4 border-t border-white/5">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-gradient-to-r from-neon-green to-neon-blue rounded" />
+          <div className="w-6 h-0.5 bg-gradient-to-r from-neon-green to-neon-blue rounded flex-shrink-0" />
           <span className="text-xs text-gray-400">Revenue Trend</span>
         </div>
         <p className="text-xs text-gray-500">Click point for details</p>
       </div>
 
-      {/* Detail Modal - Same as bar chart */}
       <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        open={showModal}
+        onCancel={() => setShowModal(false)}
         title={`Revenue Details - ${selectedData?.label || ""}`}
+        footer={null}
+        centered
+        width={700}
       >
         {selectedData && (
           <div className="space-y-4">
-            {/* Summary */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-neon-green/10 border border-neon-green/30">
                 <p className="text-xs text-gray-400 uppercase">Total Revenue</p>
-                <p className="text-2xl font-bold text-neon-green mt-1">
+                <p className="text-xl sm:text-2xl font-bold text-neon-green mt-1 break-words">
                   {formatCurrencyFull(
                     selectedData.total || selectedData.value || 0
                   )}
@@ -424,26 +382,25 @@ const ChartCardGraph = ({
               </div>
               <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
                 <p className="text-xs text-gray-400 uppercase">Received</p>
-                <p className="text-2xl font-bold text-green-400 mt-1">
+                <p className="text-xl sm:text-2xl font-bold text-green-400 mt-1 break-words">
                   {formatCurrencyFull(selectedData.paid || 0)}
                 </p>
               </div>
             </div>
 
-            {/* Pending */}
             <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <div className="flex justify-between items-center">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div className="flex-1">
                   <p className="text-xs text-gray-400 uppercase">
                     Pending Amount
                   </p>
-                  <p className="text-xl font-bold text-amber-400 mt-1">
+                  <p className="text-lg sm:text-xl font-bold text-amber-400 mt-1 break-words">
                     {formatCurrencyFull(selectedData.pending || 0)}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="text-xs text-gray-400">Collection Rate</p>
-                  <p className="text-lg font-bold text-white">
+                  <p className="text-base sm:text-lg font-bold text-white">
                     {selectedData.total > 0
                       ? Math.round(
                           ((selectedData.paid || 0) / selectedData.total) * 100
@@ -455,7 +412,6 @@ const ChartCardGraph = ({
               </div>
             </div>
 
-            {/* Projects Count */}
             <div className="p-4 rounded-xl bg-white/5 border border-white/10">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Completed Projects</span>
@@ -465,7 +421,6 @@ const ChartCardGraph = ({
               </div>
             </div>
 
-            {/* Projects List */}
             {selectedData.projects && selectedData.projects.length > 0 ? (
               <div className="space-y-3">
                 <h4 className="text-white font-medium">Projects</h4>
@@ -475,17 +430,17 @@ const ChartCardGraph = ({
                       key={idx}
                       className="p-3 rounded-xl bg-white/5 border border-white/10"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="text-white font-medium text-sm truncate">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-sm break-words">
                             {project.name || project.projectName}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 truncate">
                             {project.client || "No client"}
                           </p>
                         </div>
-                        <div className="text-right ml-3">
-                          <p className="text-neon-green font-semibold text-sm">
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <p className="text-neon-green font-semibold text-sm break-words">
                             {formatCurrencyFull(project.budget)}
                           </p>
                           <p className="text-xs text-gray-500">

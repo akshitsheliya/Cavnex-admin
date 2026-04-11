@@ -1,7 +1,7 @@
+// ReminderDisplay.jsx
 import React, { useState } from "react";
 import { Modal, DatePicker, Input, message } from "antd";
 import dayjs from "dayjs";
-import Button from "../common/Button";
 
 const { TextArea } = Input;
 
@@ -14,20 +14,16 @@ const ReminderDisplay = ({
   loading = false,
 }) => {
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editData, setEditData] = useState({
-    date: null,
-    note: "",
-  });
+  const [editData, setEditData] = useState({ date: null, note: "" });
   const [saving, setSaving] = useState(false);
 
-  // No reminder state
   if (!reminder || !reminder.date) {
     return (
-      <div className="p-6 rounded-xl bg-white/[0.02] border border-dashed border-white/10">
+      <div className="p-4 sm:p-6 rounded-xl bg-white/[0.02] border border-dashed border-white/10">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/5 flex items-center justify-center">
             <svg
-              className="w-7 h-7 text-gray-500"
+              className="w-6 h-6 sm:w-7 sm:h-7 text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -41,7 +37,9 @@ const ReminderDisplay = ({
             </svg>
           </div>
           <div>
-            <p className="text-gray-400 font-medium">No Reminder Set</p>
+            <p className="text-gray-400 font-medium text-sm sm:text-base">
+              No Reminder Set
+            </p>
             <p className="text-gray-500 text-xs mt-1">
               Set a reminder to follow up on this lead
             </p>
@@ -52,7 +50,7 @@ const ReminderDisplay = ({
                 setEditData({ date: null, note: "" });
                 setShowEditModal(true);
               }}
-              className="mt-2 px-4 py-2 rounded-lg bg-neon-green/10 border border-neon-green/30 text-neon-green text-sm font-medium hover:bg-neon-green/20 transition-colors flex items-center gap-2"
+              className="mt-1 px-4 py-2 rounded-lg bg-neon-green/10 border border-neon-green/30 text-neon-green text-sm font-medium hover:bg-neon-green/20 transition-colors flex items-center gap-2"
             >
               <svg
                 className="w-4 h-4"
@@ -72,7 +70,6 @@ const ReminderDisplay = ({
           )}
         </div>
 
-        {/* Edit/Add Modal */}
         <ReminderModal
           open={showEditModal}
           onClose={() => setShowEditModal(false)}
@@ -99,7 +96,6 @@ const ReminderDisplay = ({
     );
   }
 
-  // Calculate reminder status
   const reminderDate = new Date(reminder.date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -114,7 +110,7 @@ const ReminderDisplay = ({
   const isDismissed = reminder.status === "dismissed";
 
   const getStatusConfig = () => {
-    if (isCompleted) {
+    if (isCompleted)
       return {
         bg: "bg-green-500/10",
         border: "border-green-500/30",
@@ -123,8 +119,7 @@ const ReminderDisplay = ({
         label: "Completed",
         iconBg: "bg-green-500/20",
       };
-    }
-    if (isDismissed) {
+    if (isDismissed)
       return {
         bg: "bg-gray-500/10",
         border: "border-gray-500/30",
@@ -133,8 +128,7 @@ const ReminderDisplay = ({
         label: "Dismissed",
         iconBg: "bg-gray-500/20",
       };
-    }
-    if (isOverdue) {
+    if (isOverdue)
       return {
         bg: "bg-red-500/10",
         border: "border-red-500/30",
@@ -143,8 +137,7 @@ const ReminderDisplay = ({
         label: "Overdue",
         iconBg: "bg-red-500/20",
       };
-    }
-    if (isToday) {
+    if (isToday)
       return {
         bg: "bg-amber-500/10",
         border: "border-amber-500/30",
@@ -154,7 +147,6 @@ const ReminderDisplay = ({
         label: "Today",
         iconBg: "bg-amber-500/20",
       };
-    }
     return {
       bg: "bg-neon-blue/10",
       border: "border-neon-blue/30",
@@ -193,15 +185,16 @@ const ReminderDisplay = ({
 
   return (
     <>
-      <div className={`p-5 rounded-xl ${config.bg} border ${config.border}`}>
-        {/* Header */}
+      <div
+        className={`p-4 sm:p-5 rounded-xl ${config.bg} border ${config.border}`}
+      >
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div
-              className={`w-10 h-10 rounded-full ${config.iconBg} flex items-center justify-center`}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full ${config.iconBg} flex items-center justify-center flex-shrink-0`}
             >
               <svg
-                className={`w-5 h-5 ${config.icon}`}
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${config.icon}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -214,23 +207,25 @@ const ReminderDisplay = ({
                 />
               </svg>
             </div>
-            <div>
-              <span className="text-sm font-semibold text-white">Reminder</span>
-              <span
-                className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.badge}`}
-              >
-                {config.label}
-              </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="text-sm font-semibold text-white">
+                  Reminder
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${config.badge}`}
+                >
+                  {config.label}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="space-y-3 mb-4">
-          {/* Date */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
+        <div className="space-y-2 sm:space-y-3 mb-4">
+          <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-black/20">
             <svg
-              className="w-5 h-5 text-gray-400 flex-shrink-0"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -242,7 +237,7 @@ const ReminderDisplay = ({
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <span className="text-white text-sm font-medium">
+            <span className="text-white text-xs sm:text-sm font-medium">
               {new Date(reminder.date).toLocaleDateString("en-IN", {
                 weekday: "long",
                 day: "numeric",
@@ -252,11 +247,10 @@ const ReminderDisplay = ({
             </span>
           </div>
 
-          {/* Note */}
           {reminder.note && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-black/20">
+            <div className="flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-black/20">
               <svg
-                className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0 mt-0.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -268,21 +262,22 @@ const ReminderDisplay = ({
                   d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
                 />
               </svg>
-              <p className="text-gray-300 text-sm">{reminder.note}</p>
+              <p className="text-gray-300 text-xs sm:text-sm break-words">
+                {reminder.note}
+              </p>
             </div>
           )}
         </div>
 
-        {/* Actions for Pending */}
         {reminder.status === "pending" && (
-          <div className="flex items-center gap-2 pt-4 border-t border-white/10">
+          <div className="flex flex-wrap items-center gap-2 pt-3 sm:pt-4 border-t border-white/10">
             <button
               onClick={() => onStatusChange && onStatusChange("completed")}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-medium hover:bg-green-500/20 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-[100px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-xs sm:text-sm font-medium hover:bg-green-500/20 transition-colors disabled:opacity-50"
             >
               <svg
-                className="w-4 h-4"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -299,10 +294,10 @@ const ReminderDisplay = ({
             <button
               onClick={() => onStatusChange && onStatusChange("dismissed")}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-500/10 border border-gray-500/30 text-gray-400 text-sm font-medium hover:bg-gray-500/20 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-[100px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-gray-500/10 border border-gray-500/30 text-gray-400 text-xs sm:text-sm font-medium hover:bg-gray-500/20 transition-colors disabled:opacity-50"
             >
               <svg
-                className="w-4 h-4"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -320,11 +315,11 @@ const ReminderDisplay = ({
               <button
                 onClick={handleEdit}
                 disabled={loading}
-                className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
+                className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
                 title="Edit Reminder"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -341,16 +336,15 @@ const ReminderDisplay = ({
           </div>
         )}
 
-        {/* Actions for Completed/Dismissed */}
         {(isCompleted || isDismissed) && (
-          <div className="flex items-center gap-2 pt-4 border-t border-white/10">
+          <div className="flex items-center gap-2 pt-3 sm:pt-4 border-t border-white/10">
             <button
               onClick={() => onStatusChange && onStatusChange("pending")}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-neon-blue/10 border border-neon-blue/30 text-neon-blue text-sm font-medium hover:bg-neon-blue/20 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-neon-blue/10 border border-neon-blue/30 text-neon-blue text-xs sm:text-sm font-medium hover:bg-neon-blue/20 transition-colors disabled:opacity-50"
             >
               <svg
-                className="w-4 h-4"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -368,11 +362,11 @@ const ReminderDisplay = ({
               <button
                 onClick={onDelete}
                 disabled={loading}
-                className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                className="p-2 sm:p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                 title="Delete Reminder"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -390,7 +384,6 @@ const ReminderDisplay = ({
         )}
       </div>
 
-      {/* Edit Modal */}
       <ReminderModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -404,7 +397,6 @@ const ReminderDisplay = ({
   );
 };
 
-// Separate Modal Component
 const ReminderModal = ({
   open,
   onClose,
@@ -421,7 +413,7 @@ const ReminderModal = ({
       title={
         <span className="text-white flex items-center gap-2">
           <svg
-            className="w-5 h-5 text-neon-green"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-neon-green"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -439,13 +431,12 @@ const ReminderModal = ({
       footer={null}
       className="custom-reminder-modal"
       centered
-      width={450}
+      width="min(450px, 95vw)"
       destroyOnClose
     >
-      <div className="py-4 space-y-5">
-        {/* Date Picker */}
+      <div className="py-3 sm:py-4 space-y-4 sm:space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
             Reminder Date <span className="text-neon-green">*</span>
           </label>
           <DatePicker
@@ -462,9 +453,8 @@ const ReminderModal = ({
           />
         </div>
 
-        {/* Note */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
             Note <span className="text-gray-500">(Optional)</span>
           </label>
           <TextArea
@@ -478,18 +468,17 @@ const ReminderModal = ({
           />
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2 sm:gap-3 pt-2">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-medium hover:bg-white/10 transition-colors"
+            className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-medium hover:bg-white/10 transition-colors text-sm"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
             disabled={!editData.date || saving}
-            className="flex-1 px-4 py-3 rounded-xl bg-neon-green/20 border border-neon-green/30 text-neon-green font-medium hover:bg-neon-green/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-neon-green/20 border border-neon-green/30 text-neon-green font-medium hover:bg-neon-green/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             {saving ? "Saving..." : isNew ? "Set Reminder" : "Save Changes"}
           </button>
@@ -505,10 +494,10 @@ const ReminderModal = ({
         .custom-reminder-modal .ant-modal-header {
           background: transparent !important;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-          padding: 16px 24px !important;
+          padding: 12px 20px !important;
         }
         .custom-reminder-modal .ant-modal-body {
-          padding: 0 24px 24px !important;
+          padding: 0 20px 20px !important;
         }
         .custom-reminder-modal .ant-modal-title {
           color: white !important;
@@ -530,10 +519,6 @@ const ReminderModal = ({
         .custom-datepicker .ant-picker-suffix,
         .custom-datepicker .ant-picker-clear {
           color: #9ca3af !important;
-        }
-        .custom-datepicker:hover,
-        .custom-datepicker-focused {
-          border-color: rgba(0, 255, 136, 0.5) !important;
         }
         .custom-datepicker-dropdown .ant-picker-panel {
           background: #1a1a2e !important;

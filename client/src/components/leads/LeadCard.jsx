@@ -1,6 +1,7 @@
 // LeadCard.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { message } from "antd";
 import LeadStatusBadge from "./LeadStatusBadge";
 
 const sourceIcons = {
@@ -35,18 +36,15 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="glass-card p-3 sm:p-4 lg:p-5 flex flex-col hover:border-neon-green/30 hover:shadow-[0_0_30px_rgba(0,255,136,0.1)] transition-all duration-300 group min-h-0">
-      {/* Header: avatar + name + status */}
-      <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+    <div className="glass-card p-3 sm:p-4 flex flex-col hover:border-neon-green/30 hover:shadow-[0_0_30px_rgba(0,255,136,0.1)] transition-all duration-300 group min-h-0 w-full overflow-hidden">
+      <div className="flex items-start justify-between mb-3 gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          {/* Avatar */}
-          <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 flex-shrink-0 rounded-lg sm:rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20">
-            <span className="text-sm sm:text-base font-semibold text-purple-400">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20">
+            <span className="text-sm font-semibold text-purple-400">
               {lead.leadName?.charAt(0).toUpperCase()}
             </span>
           </div>
 
-          {/* Name + business */}
           <div className="min-w-0 flex-1">
             <h3
               onClick={() => navigate(`/leads/${lead._id}`)}
@@ -64,18 +62,15 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
           </div>
         </div>
 
-        {/* Status badge */}
         <div className="flex-shrink-0">
           <LeadStatusBadge status={lead.status} size="sm" />
         </div>
       </div>
 
-      {/* Meta grid */}
-      <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
-        {/* Email */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs lg:text-sm text-gray-400 min-w-0">
+      <div className="space-y-1.5 mb-3">
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 min-w-0">
           <svg
-            className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+            className="w-3.5 h-3.5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -90,11 +85,10 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
           <span className="truncate">{lead.email}</span>
         </div>
 
-        {/* Phone + source row */}
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs lg:text-sm text-gray-400 min-w-0">
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 min-w-0">
             <svg
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+              className="w-3.5 h-3.5 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -109,8 +103,8 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
             <span className="truncate">{lead.phone}</span>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs lg:text-sm text-gray-400 min-w-0">
-            <span className="flex-shrink-0 text-xs sm:text-sm">
+          <div className="flex items-center gap-1 text-xs text-gray-400 min-w-0">
+            <span className="flex-shrink-0">
               {sourceIcons[lead.source] || "📌"}
             </span>
             <span className="capitalize truncate">
@@ -119,10 +113,9 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
           </div>
         </div>
 
-        {/* City row */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs lg:text-sm text-gray-400 min-w-0">
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 min-w-0">
           <svg
-            className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+            className="w-3.5 h-3.5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -142,59 +135,53 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
           </svg>
           <span className="truncate">{lead.city || "N/A"}</span>
           {!lead.organization && !lead.createdBy && (
-            <span className="ml-auto flex-shrink-0 px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[10px] font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap">
+            <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30 whitespace-nowrap">
               Website
             </span>
           )}
         </div>
       </div>
 
-      {/* Estimated Value */}
       {lead.estimatedValue > 0 && (
-        <div className="mb-3 sm:mb-4 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-neon-green/5 border border-neon-green/20">
-          <p className="text-[10px] sm:text-xs text-gray-400">
-            Estimated Value
-          </p>
-          <p className="text-sm sm:text-base font-semibold text-neon-green mt-0.5">
+        <div className="mb-3 p-2 sm:p-3 rounded-xl bg-neon-green/5 border border-neon-green/20">
+          <p className="text-[10px] text-gray-400">Estimated Value</p>
+          <p className="text-sm font-semibold text-neon-green mt-0.5">
             {formatCurrency(lead.estimatedValue)}
           </p>
         </div>
       )}
 
-      {/* Footer: date + action icons */}
-      <div className="flex items-center justify-between pt-2.5 sm:pt-3.5 border-t border-white/5 mt-auto">
-        <span className="text-[10px] sm:text-xs text-gray-500 truncate">
+      <div className="flex items-center justify-between pt-2.5 border-t border-white/5 mt-auto gap-1">
+        <span className="text-[10px] text-gray-500 truncate flex-shrink-0 max-w-[80px]">
           {formatDate(lead.createdAt)}
         </span>
 
-        {/* ✅ NEW: Compact Copy Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const leadData = `Lead: ${lead.leadName}\nEmail: ${lead.email}\nPhone: ${lead.phone}\nStatus: ${lead.status}`;
-            navigator.clipboard.writeText(leadData);
-            message.success("Lead details copied!");
-          }}
-          className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-neon-green transition-colors"
-          title="Copy details"
-        >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
-        </button>
-
         <div className="flex items-center gap-0 flex-shrink-0">
-          {/* View */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const leadData = `Lead: ${lead.leadName}\nEmail: ${lead.email}\nPhone: ${lead.phone}\nStatus: ${lead.status}`;
+              navigator.clipboard.writeText(leadData);
+              message.success("Lead details copied!");
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-neon-green transition-colors"
+            title="Copy details"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+          </button>
+
           <button
             onClick={() => navigate(`/leads/${lead._id}`)}
             className={`${iconBtn} text-gray-400 hover:text-white hover:bg-white/10`}
@@ -221,7 +208,6 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
             </svg>
           </button>
 
-          {/* Edit */}
           <button
             onClick={() => navigate(`/leads/${lead._id}/edit`)}
             className={`${iconBtn} text-gray-400 hover:text-neon-green hover:bg-neon-green/10`}
@@ -242,7 +228,6 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
             </svg>
           </button>
 
-          {/* Convert */}
           {lead.status !== "closed_won" && !lead.convertedToClient && (
             <button
               onClick={() => onConvert(lead._id)}
@@ -265,7 +250,6 @@ const LeadCard = ({ lead, onDelete, onConvert }) => {
             </button>
           )}
 
-          {/* Delete */}
           <button
             onClick={() => onDelete(lead._id)}
             className={`${iconBtn} text-gray-400 hover:text-red-400 hover:bg-red-500/10`}

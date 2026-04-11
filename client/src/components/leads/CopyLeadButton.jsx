@@ -1,3 +1,4 @@
+// CopyLeadButton.jsx
 import React, { useState } from "react";
 import { message } from "antd";
 
@@ -24,20 +25,19 @@ Created: ${new Date(lead.createdAt).toLocaleDateString()}
     navigator.clipboard.writeText(leadData);
     setCopied(true);
     message.success("Lead details copied to clipboard!");
-
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <button
       onClick={copyLead}
-      className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-neon-green hover:border-neon-green/30 transition-all duration-200 w-full"
+      className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-neon-green hover:border-neon-green/30 transition-all duration-200 w-full text-sm"
       title="Copy lead details"
     >
       {copied ? (
         <>
           <svg
-            className="w-4 h-4 text-neon-green"
+            className="w-4 h-4 text-neon-green flex-shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -47,12 +47,12 @@ Created: ${new Date(lead.createdAt).toLocaleDateString()}
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-sm text-neon-green">Copied!</span>
+          <span className="text-neon-green">Copied!</span>
         </>
       ) : (
         <>
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -64,7 +64,7 @@ Created: ${new Date(lead.createdAt).toLocaleDateString()}
               d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
             />
           </svg>
-          <span className="text-sm">Copy Details</span>
+          <span>Copy Details</span>
         </>
       )}
     </button>

@@ -7,10 +7,10 @@ const { Option } = Select;
 
 const LeadFilters = ({ filters, onFilterChange, onReset }) => {
   const statusOptions = [
-    { value: "", label: "All Status" },
     { value: "new", label: "New" },
     { value: "contacted", label: "Contacted" },
     { value: "meeting", label: "Meeting" },
+    { value: "proposal_pending", label: "Proposal Pending" },
     { value: "proposal_sent", label: "Proposal Sent" },
     { value: "negotiation", label: "Negotiation" },
     { value: "closed_won", label: "Won" },
@@ -18,7 +18,6 @@ const LeadFilters = ({ filters, onFilterChange, onReset }) => {
   ];
 
   const sourceOptions = [
-    { value: "", label: "All Sources" },
     { value: "website", label: "Website" },
     { value: "instagram", label: "Instagram" },
     { value: "referral", label: "Referral" },
@@ -31,8 +30,8 @@ const LeadFilters = ({ filters, onFilterChange, onReset }) => {
 
   return (
     <div className="glass-card p-3 sm:p-4 mb-4 sm:mb-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex-1 min-w-0">
+      <div className="flex flex-col gap-2 sm:gap-3">
+        <div className="w-full">
           <Input
             placeholder="Search leads..."
             prefix={<SearchOutlined className="text-gray-400" />}
@@ -43,40 +42,44 @@ const LeadFilters = ({ filters, onFilterChange, onReset }) => {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <Select
-            value={filters.status || undefined}
-            onChange={(value) => onFilterChange("status", value || "")}
-            placeholder="All Status"
-            allowClear
-            className="custom-filter-select w-full sm:w-36 lg:w-40"
-            popupClassName="custom-dropdown"
-          >
-            {statusOptions.slice(1).map((option) => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
+        <div className="flex flex-wrap gap-2">
+          <div className="flex-1 min-w-[140px]">
+            <Select
+              value={filters.status || undefined}
+              onChange={(value) => onFilterChange("status", value || "")}
+              placeholder="All Status"
+              allowClear
+              className="custom-filter-select w-full"
+              popupClassName="custom-dropdown"
+            >
+              {statusOptions.map((option) => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </div>
 
-          <Select
-            value={filters.source || undefined}
-            onChange={(value) => onFilterChange("source", value || "")}
-            placeholder="All Sources"
-            allowClear
-            className="custom-filter-select w-full sm:w-36 lg:w-40"
-            popupClassName="custom-dropdown"
-          >
-            {sourceOptions.slice(1).map((option) => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
+          <div className="flex-1 min-w-[140px]">
+            <Select
+              value={filters.source || undefined}
+              onChange={(value) => onFilterChange("source", value || "")}
+              placeholder="All Sources"
+              allowClear
+              className="custom-filter-select w-full"
+              popupClassName="custom-dropdown"
+            >
+              {sourceOptions.map((option) => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </div>
 
           <button
             onClick={onReset}
-            className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors whitespace-nowrap"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 border border-white/10"
           >
             Reset
           </button>

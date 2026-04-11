@@ -1,3 +1,4 @@
+// ReminderInput.jsx
 import React, { useState } from "react";
 import DateInput from "../common/DateInput";
 
@@ -11,9 +12,7 @@ const ReminderInput = ({
 
   const handleDateChange = (date) => {
     onChange({ ...value, date });
-    if (date && !isExpanded) {
-      setIsExpanded(true);
-    }
+    if (date && !isExpanded) setIsExpanded(true);
   };
 
   const handleNoteChange = (e) => {
@@ -29,11 +28,11 @@ const ReminderInput = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <label className="block text-sm font-medium text-gray-300">
           <div className="flex items-center gap-2">
             <svg
-              className="w-4 h-4 text-amber-400"
+              className="w-4 h-4 text-amber-400 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -53,14 +52,14 @@ const ReminderInput = ({
             type="button"
             onClick={handleClear}
             disabled={disabled}
-            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+            className="text-xs text-red-400 hover:text-red-300 transition-colors flex-shrink-0"
           >
-            Clear Reminder
+            Clear
           </button>
         )}
       </div>
 
-      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
+      <div className="p-3 sm:p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3 sm:space-y-4">
         <div>
           <label className="block text-xs text-gray-500 mb-2">
             Reminder Date
@@ -76,9 +75,9 @@ const ReminderInput = ({
         </div>
 
         {(isExpanded || value.date) && (
-          <div className="animate-fadeIn">
+          <div>
             <label className="block text-xs text-gray-500 mb-2">
-              Reminder Note (Optional)
+              Reminder Note <span className="text-gray-600">(Optional)</span>
             </label>
             <textarea
               value={value.note || ""}
@@ -87,15 +86,14 @@ const ReminderInput = ({
               placeholder="E.g., Follow up about pricing, Schedule demo call..."
               rows={3}
               maxLength={500}
-              className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.06] transition-all duration-300 resize-none"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-gray-500 text-xs sm:text-sm focus:outline-none focus:border-neon-green/50 focus:bg-white/[0.06] transition-all duration-300 resize-none"
             />
-            <div className="flex justify-between mt-1">
+            <div className="flex flex-wrap justify-between mt-1 gap-1">
               <span className="text-xs text-gray-500">
-                {value.note?.length || 0}/500 characters
+                {value.note?.length || 0}/500
               </span>
               {value.date && (
-                <span className="text-xs text-amber-400">
-                  Reminder set for{" "}
+                <span className="text-xs text-amber-400 text-right">
                   {new Date(value.date).toLocaleDateString("en-IN", {
                     weekday: "short",
                     day: "numeric",

@@ -1,6 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
-import Dropdown from "../common/Dropdown";
+import { Select } from "antd";
 import { formatCurrency } from "../../utils/dashboardHelpers";
 
 const RevenueChart = ({
@@ -30,40 +30,39 @@ const RevenueChart = ({
 
   return (
     <Card>
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+        <div className="flex-1">
           <h3 className="text-lg font-semibold text-white">Revenue Overview</h3>
           <p className="text-sm text-gray-400">
             Revenue from completed projects
           </p>
         </div>
-        <Dropdown
+        <Select
           value={chartPeriod}
           onChange={onPeriodChange}
           options={periodOptions}
-          placeholder="Select Period"
-          variant="minimal"
-          size="sm"
-          className="min-w-[160px]"
+          className="w-full sm:w-auto min-w-[160px]"
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
           <p className="text-xs text-gray-400">Total Revenue</p>
-          <p className="text-lg font-bold text-neon-green">
+          <p className="text-base sm:text-lg font-bold text-neon-green break-words">
             {formatCurrency(chartTotalRevenue)}
           </p>
         </div>
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
           <p className="text-xs text-gray-400">Received</p>
-          <p className="text-lg font-bold text-green-400">
+          <p className="text-base sm:text-lg font-bold text-green-400 break-words">
             {formatCurrency(chartTotalPaid)}
           </p>
         </div>
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
           <p className="text-xs text-gray-400">Projects</p>
-          <p className="text-lg font-bold text-white">{chartTotalProjects}</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            {chartTotalProjects}
+          </p>
         </div>
       </div>
 
@@ -91,64 +90,66 @@ const RevenueChart = ({
           </div>
         </div>
       ) : (
-        <div className="h-64 flex items-end justify-between gap-1 sm:gap-2 px-2">
-          {chartData.map((item, i) => {
-            const value = item.total || 0;
-            const height =
-              chartMaxValue > 0 ? (value / chartMaxValue) * 100 : 0;
-            const hasData = value > 0;
+        <div className="overflow-x-auto pb-4">
+          <div className="min-w-[400px] h-64 flex items-end justify-between gap-1 sm:gap-2 px-2">
+            {chartData.map((item, i) => {
+              const value = item.total || 0;
+              const height =
+                chartMaxValue > 0 ? (value / chartMaxValue) * 100 : 0;
+              const hasData = value > 0;
 
-            return (
-              <div
-                key={i}
-                className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
-                onClick={() => onBarClick(item, i)}
-              >
-                <div className="relative w-full flex justify-center">
-                  <div
-                    className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 ${
-                      hasData
-                        ? "bg-gradient-to-t from-neon-green/60 to-neon-blue/60 hover:from-neon-green hover:to-neon-blue group-hover:shadow-[0_0_20px_rgba(0,255,136,0.4)]"
-                        : "bg-white/10 hover:bg-white/20"
-                    }`}
-                    style={{ height: `${Math.max(height * 2, 8)}px` }}
-                  />
-                  <div className="absolute -top-20 left-1/2 -translate-x-1/2 px-3 py-2 bg-dark-600 border border-white/10 rounded-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                    <p className="font-semibold text-neon-green">
-                      {formatCurrency(value)}
-                    </p>
-                    <p className="text-gray-400">
-                      {item.projectCount || 0} projects
-                    </p>
-                    {item.paid > 0 && (
-                      <p className="text-green-400">
-                        Paid: {formatCurrency(item.paid)}
+              return (
+                <div
+                  key={i}
+                  className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
+                  onClick={() => onBarClick(item, i)}
+                >
+                  <div className="relative w-full flex justify-center">
+                    <div
+                      className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 ${
+                        hasData
+                          ? "bg-gradient-to-t from-neon-green/60 to-neon-blue/60 hover:from-neon-green hover:to-neon-blue group-hover:shadow-[0_0_20px_rgba(0,255,136,0.4)]"
+                          : "bg-white/10 hover:bg-white/20"
+                      }`}
+                      style={{ height: `${Math.max(height * 2, 8)}px` }}
+                    />
+                    <div className="absolute -top-20 left-1/2 -translate-x-1/2 px-3 py-2 bg-dark-600 border border-white/10 rounded-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                      <p className="font-semibold text-neon-green">
+                        {formatCurrency(value)}
                       </p>
+                      <p className="text-gray-400">
+                        {item.projectCount || 0} projects
+                      </p>
+                      {item.paid > 0 && (
+                        <p className="text-green-400">
+                          Paid: {formatCurrency(item.paid)}
+                        </p>
+                      )}
+                      <p className="text-gray-500 mt-1 text-[10px]">
+                        Click for details
+                      </p>
+                    </div>
+                    {hasData && (
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-neon-green rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
                     )}
-                    <p className="text-gray-500 mt-1 text-[10px]">
-                      Click for details
-                    </p>
                   </div>
-                  {hasData && (
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-neon-green rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-                  )}
+                  <span className="text-xs text-gray-500 group-hover:text-white transition-colors">
+                    {getBarLabel(item)}
+                  </span>
                 </div>
-                <span className="text-xs text-gray-500 group-hover:text-white transition-colors">
-                  {getBarLabel(item)}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-white/5">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-4 pt-4 border-t border-white/5">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-neon-green to-neon-blue" />
+          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-neon-green to-neon-blue flex-shrink-0" />
           <span className="text-xs text-gray-400">Revenue</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
           <span className="text-xs text-gray-400">Received</span>
         </div>
         <p className="text-xs text-gray-500">Click bar for details</p>
